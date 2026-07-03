@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGNITE NOTES</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* =========================================
+           CORE VISUAL SYSTEM (Clean Version for Embed)
+           ========================================= */
+        :root {
+            --bg-void: #000000;
+            --arc-cyan: #00f3ff; 
+            --arc-blue: #0077ff;
+            --arc-orange: #ff5500;
+            --arc-green: #00ff9d;
+            --border-dim: rgba(0, 243, 255, 0.15);
+            
+            --font-ui: 'Rajdhani', sans-serif;
+            --font-tech: 'Share Tech Mono', monospace;
+            --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+            --font-math: 'Times New Roman', serif;
+        }
+
+        * { box-sizing: border-box; }
+        *::-webkit-scrollbar { width: 4px; }
+        *::-webkit-scrollbar-track { background: #000; }
+        *::-webkit-scrollbar-thumb { background: var(--arc-blue); }
+
+        body {
+            /* 移除背景颜色，让它透明融入或保持深色 */
+            background-color: transparent; 
+            color: #e0f0ff;
+            font-family: var(--font-body);
+            margin: 0; padding: 20px; /* 给一点内边距 */
+            line-height: 1.6;
+            overflow-x: hidden; /* 防止横向滚动条 */
+        }
+
+        /* 顶部新标题样式 */
+        .note-brand {
+            font-family: var(--font-ui);
+            font-weight: 800;
+            font-size: 24px;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--arc-cyan);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .container { max-width: 100%; margin: 0 auto; padding-bottom: 100px; }
+
+        /* HUD Panels */
+        .hud-panel {
+            background: rgba(10, 15, 20, 0.6);
+            border: 1px solid var(--border-dim);
+            margin-bottom: 40px;
+            position: relative;
+            backdrop-filter: blur(5px);
+            transition: border-color 0.3s;
+        }
+        
+        .hud-panel:hover { border-color: rgba(0, 243, 255, 0.4); }
+
+        /* Corner Accents */
+        .corner-decor {
+            position: absolute; width: 10px; height: 10px; pointer-events: none;
+            border-color: var(--arc-cyan); border-style: solid;
+            transition: all 0.3s;
+        }
+        .c-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .c-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .c-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .c-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+        
+        .panel-header {
+            padding: 15px 25px; border-bottom: 1px solid var(--border-dim);
+            display: flex; align-items: center; gap: 15px;
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.05), transparent);
+        }
+        .panel-id { font-family: var(--font-tech); color: var(--arc-cyan); font-weight: bold; font-size: 14px; opacity: 0.8; }
+        .panel-title { font-family: var(--font-ui); font-size: 20px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+
+        .panel-body { padding: 30px; }
+
+        /* Typography */
+        h1 { 
+            font-family: var(--font-ui); font-size: 42px; color: #fff; margin: 0 0 5px 0; 
+            text-transform: uppercase; letter-spacing: 4px; line-height: 0.9;
+        }
+        h2 { font-family: var(--font-ui); font-size: 28px; color: #fff; margin: 0 0 20px 0; }
+        h3 { font-family: var(--font-ui); font-size: 18px; color: var(--arc-cyan); margin: 30px 0 15px 0; border-left: 3px solid var(--arc-blue); padding-left: 10px; letter-spacing: 1px; }
+
+        .bilingual { margin-bottom: 15px; }
+        .en-text { color: #e0f0ff; margin-bottom: 4px; display: block; font-size: 16px; }
+        .cn-text { color: #789; font-size: 13px; display: block; font-family: 'Noto Sans SC'; }
+
+        /* Math Blocks */
+        .math-block {
+            background: rgba(0,0,0,0.6); 
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; margin: 20px 0; text-align: center;
+            font-family: var(--font-math); font-size: 1.3rem; color: #fff;
+            position: relative;
+        }
+
+        /* Visualization Cards */
+        .vis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .vis-card {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; transition: 0.3s; position: relative;
+        }
+        .vis-card:hover { border-color: var(--arc-cyan); background: rgba(0, 243, 255, 0.05); }
+        .vis-title { font-family: var(--font-tech); font-weight: 700; color: var(--arc-cyan); margin-bottom: 10px; letter-spacing: 1px; font-size: 12px; }
+        
+        canvas { width: 100%; height: 150px; background: #050505; border-bottom: 1px solid #222; margin-bottom: 10px; }
+
+        /* Interactive Elements */
+        .practice-box {
+            border: 1px dashed var(--border-dim); padding: 25px; margin: 20px 0;
+            background: rgba(41, 121, 255, 0.03); position: relative;
+        }
+        .btn-reveal {
+            background: transparent; border: 1px solid var(--arc-cyan); color: var(--arc-cyan);
+            padding: 10px 25px; font-family: var(--font-ui); font-weight: 700; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s; font-size: 13px; margin-top: 20px;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+        }
+        .btn-reveal:hover { background: rgba(0, 243, 255, 0.15); color: #fff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+        
+        .solution-panel {
+            margin-top: 20px; padding: 20px; border-left: 2px solid var(--arc-green);
+            background: rgba(0, 255, 157, 0.05); display: none; animation: slideIn 0.3s ease;
+        }
+        .solution-panel.active { display: block; }
+        .sol-header { color: var(--arc-green); font-family: var(--font-tech); font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; }
+
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-family: var(--font-tech); font-size: 13px; }
+        th, td { border: 1px solid rgba(255,255,255,0.1); padding: 12px; text-align: center; }
+        th { background: rgba(0, 243, 255, 0.05); color: var(--arc-cyan); text-transform: uppercase; }
+
+        @keyframes slideIn { from{opacity:0; transform:translateX(-10px);} to{opacity:1; transform:translateX(0);} }
+        
+        @media (max-width: 768px) { .vis-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="note-brand">IGNITE NOTES //</div>
+
+    <div class="container">
+        
+        <header style="margin-bottom: 40px;">
+            <h1>Riemann Sums</h1>
+            <div style="font-family:var(--font-tech); color:var(--arc-blue); letter-spacing:1px;">MODULE: DEFINITE INTEGRALS & ACCUMULATION</div>
+        </header>
+
+        <section id="intro" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+            
+            <div class="panel-header">
+                <span class="panel-id">01</span>
+                <span class="panel-title">The Area Problem</span>
+            </div>
+            <div class="panel-body">
+                <div class="bilingual">
+                    <span class="en-text">In geometry, calculating the area of regular shapes like rectangles is easy. But how do we find the exact area under a curved graph?</span>
+                    <span class="cn-text">在几何中，计算规则图形（如矩形）的面积很容易。但在微积分中，我们如何求出一条曲线下方的精确面积？</span>
+                </div>
+
+                <div style="border-left: 2px solid var(--arc-orange); padding-left: 20px; margin: 25px 0; background: linear-gradient(90deg, rgba(255, 85, 0, 0.05), transparent);">
+                    <div class="bilingual">
+                        <span class="en-text" style="color:#fff; font-weight:bold; font-family:var(--font-ui); text-transform:uppercase;">STRATEGY: Approximation</span>
+                        <span class="cn-text" style="color:var(--arc-orange);">策略：逼近法</span>
+                    </div>
+                    <ul style="list-style:none; padding:0; font-size:14px; color:#aaa; font-family:var(--font-tech);">
+                        <li>>> Slice the area into thin vertical strips. (切割成垂直条)</li>
+                        <li>>> Treat each strip as a rectangle. (视为矩形)</li>
+                        <li>>> Add up their areas. (求和)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="notation" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+
+            <div class="panel-header">
+                <span class="panel-id">02</span>
+                <span class="panel-title">Notation & Syntax</span>
+            </div>
+            <div class="panel-body">
+                <h3>Sigma Notation (\(\Sigma\))</h3>
+                <div class="math-block">
+                    \[\sum_{k=1}^{n} a_k = a_1 + a_2 + a_3 + \cdots + a_n\]
+                </div>
+                
+                <h3>The Riemann Sum Definition</h3>
+                <div class="bilingual">
+                    <span class="en-text">Given a function \( f(x) \) on interval \([a, b]\) partitioned into \( n \) subintervals:</span>
+                    <span class="cn-text">给定函数 \( f(x) \) 在区间 \([a, b]\) 上，被分割为 \( n \) 个子区间:</span>
+                </div>
+
+                <div class="vis-grid">
+                    <div class="vis-card">
+                        <div class="vis-title">WIDTH (\(\Delta x\))</div>
+                        <div style="font-family:var(--font-math); font-size:18px; text-align:center;">
+                            \[\Delta x = \frac{b - a}{n}\]
+                        </div>
+                    </div>
+                    <div class="vis-card">
+                        <div class="vis-title">HEIGHT (\(f(x^*)\))</div>
+                        <div style="font-size:13px; text-align:center; color:#89a;">
+                            Value of function at sample point.<br>
+                            (由采样点决定的高度)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="types" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+
+            <div class="panel-header">
+                <span class="panel-id">03</span>
+                <span class="panel-title">Approximation Methods</span>
+            </div>
+            <div class="panel-body">
+                <div class="bilingual">
+                    <span class="en-text">Visualizing the 4 standard methods on \(f(x) = 0.5x^2 + 1\).</span>
+                    <span class="cn-text">可视化 4 种标准逼近方法。</span>
+                </div>
+
+                <div class="vis-grid">
+                    <div class="vis-card">
+                        <div class="vis-title">LRAM (Left)</div>
+                        <canvas id="c-lram"></canvas>
+                        <div class="bilingual" style="font-size:12px;">
+                            <span class="en-text">Use Left Endpoint. Underestimate for Increasing func.</span>
+                            <span class="cn-text">左端点。递增函数时为低估。</span>
+                        </div>
+                    </div>
+                    <div class="vis-card">
+                        <div class="vis-title">RRAM (Right)</div>
+                        <canvas id="c-rram"></canvas>
+                        <div class="bilingual" style="font-size:12px;">
+                            <span class="en-text">Use Right Endpoint. Overestimate for Increasing func.</span>
+                            <span class="cn-text">右端点。递增函数时为高估。</span>
+                        </div>
+                    </div>
+                    <div class="vis-card">
+                        <div class="vis-title">MRAM (Midpoint)</div>
+                        <canvas id="c-mram"></canvas>
+                        <div class="bilingual" style="font-size:12px;">
+                            <span class="en-text">Use Midpoint. Generally more accurate.</span>
+                            <span class="cn-text">中点。通常更精确。</span>
+                        </div>
+                    </div>
+                    <div class="vis-card">
+                        <div class="vis-title">TRAPEZOIDAL</div>
+                        <canvas id="c-trap"></canvas>
+                        <div class="bilingual" style="font-size:12px;">
+                            <span class="en-text">Connect points linearly. Average of LRAM/RRAM.</span>
+                            <span class="cn-text">梯形连线。LRAM与RRAM的平均值。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="examples" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+
+            <div class="panel-header">
+                <span class="panel-id">04</span>
+                <span class="panel-title">Worked Examples</span>
+            </div>
+            <div class="panel-body">
+                
+                <div class="practice-box">
+                    <h4 style="color:var(--arc-cyan); margin-top:0; font-family:var(--font-ui);">Example 01: Polynomial Calculation</h4>
+                    <div class="bilingual">
+                        <span class="en-text">Calculate Left Riemann Sum for \( f(x) = x^2 + 1 \) on \([0, 2]\), \( n = 4 \).</span>
+                        <span class="cn-text">计算 \( f(x) = x^2 + 1 \) 在 \([0, 2]\) 上的左黎曼和 (\(n=4\))。</span>
+                    </div>
+                    <button class="btn-reveal" onclick="toggle('sol-1')">DECRYPT SOLUTION</button>
+                    
+                    <div id="sol-1" class="solution-panel">
+                        <div class="sol-header">SYSTEM LOG:</div>
+                        <div class="bilingual">
+                            <span class="en-text">1. Width: \(\Delta x = (2-0)/4 = 0.5\)</span>
+                        </div>
+                        <div class="bilingual">
+                            <span class="en-text">2. Points (Left): \(0, 0.5, 1.0, 1.5\)</span>
+                        </div>
+                        <div class="bilingual">
+                            <span class="en-text">3. Heights: \(f(0)=1, f(0.5)=1.25, f(1)=2, f(1.5)=3.25\)</span>
+                        </div>
+                        <div class="math-block" style="text-align:left; padding:10px;">
+                            Sum = \(0.5 \cdot (1 + 1.25 + 2 + 3.25)\) <br>
+                            Sum = \(0.5 \cdot (7.5) = \mathbf{3.75}\)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="practice-box">
+                    <h4 style="color:var(--arc-orange); margin-top:0; font-family:var(--font-ui);">Example 02: Unequal Intervals (Table)</h4>
+                    <div class="bilingual">
+                        <span class="en-text">Estimate \(\int_{0}^{10} v(t) dt\) using Right Sum.</span>
+                        <span class="cn-text">使用右黎曼和估算积分（注意不等间距）。</span>
+                    </div>
+                    <table>
+                        <tr><th>t</th><td>0</td><td>3</td><td>7</td><td>10</td></tr>
+                        <tr><th>v(t)</th><td>10</td><td>15</td><td>12</td><td>20</td></tr>
+                    </table>
+                    <button class="btn-reveal" onclick="toggle('sol-2')">DECRYPT SOLUTION</button>
+                    
+                    <div id="sol-2" class="solution-panel">
+                        <div class="sol-header">SYSTEM LOG:</div>
+                        <div class="bilingual">
+                            <span class="en-text">WARNING: \(\Delta t\) is changing. Calculate areas individually.</span>
+                            <span class="cn-text">警告：间距在变化，需单独计算。</span>
+                        </div>
+                        <ul>
+                            <li>Rect 1: Width 3, Height \(v(3)=15\) \(\to 45\)</li>
+                            <li>Rect 2: Width 4, Height \(v(7)=12\) \(\to 48\)</li>
+                            <li>Rect 3: Width 3, Height \(v(10)=20\) \(\to 60\)</li>
+                        </ul>
+                        <div style="color:var(--arc-orange); font-weight:bold; margin-top:10px; font-family:var(--font-tech);">
+                            Total = 45 + 48 + 60 = 153
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Toggle Solution Logic
+        function toggle(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('active');
+        }
+
+        // CANVAS ENGINE
+        const fn = x => 0.2 * x * x + 1; 
+        
+        function drawConcept(id, type) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            const w = rect.width;
+            const h = rect.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            const padding = 10;
+            const xMax = 4; 
+            const yMax = fn(xMax) * 1.2;
+            const toX = x => padding + (x / xMax) * (w - 2*padding);
+            const toY = y => h - padding - (y / yMax) * (h - 2*padding);
+            
+            ctx.beginPath(); ctx.strokeStyle = '#fff'; ctx.lineWidth = 2;
+            for(let i=0; i<=50; i++) {
+                let x = (i/50)*xMax; let y = fn(x);
+                if(i===0) ctx.moveTo(toX(x), toY(y)); else ctx.lineTo(toX(x), toY(y));
+            }
+            ctx.stroke();
+            
+            const n = 4; const dx = xMax / n;
+            ctx.fillStyle = 'rgba(0, 243, 255, 0.2)';
+            ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = 1;
+            
+            for(let i=0; i<n; i++) {
+                let xL = i * dx; let xR = (i+1) * dx; let yVal = 0;
+                if(type === 'LRAM') yVal = fn(xL);
+                else if(type === 'RRAM') yVal = fn(xR);
+                else if(type === 'MRAM') yVal = fn((xL+xR)/2);
+                
+                ctx.beginPath();
+                if(type === 'TRAP') {
+                    ctx.moveTo(toX(xL), toY(0)); ctx.lineTo(toX(xL), toY(fn(xL)));
+                    ctx.lineTo(toX(xR), toY(fn(xR))); ctx.lineTo(toX(xR), toY(0));
+                } else {
+                    ctx.rect(toX(xL), toY(yVal), toX(xR)-toX(xL), toY(0)-toY(yVal));
+                }
+                ctx.fill(); ctx.stroke();
+            }
+        }
+
+        window.onload = () => {
+            drawConcept('c-lram', 'LRAM'); drawConcept('c-rram', 'RRAM');
+            drawConcept('c-mram', 'MRAM'); drawConcept('c-trap', 'TRAP');
+        }
+    </script>
+</body>
+</html>

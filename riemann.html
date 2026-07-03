@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGNITE: Riemann Sums</title>
+    
+    <!-- Libraries -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.8.0/math.min.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* --- GLOBAL THEME (Consistent with Series) --- */
+        :root {
+            --bg-dark: #05080f;
+            --panel-bg: rgba(12, 20, 35, 0.95);
+            --blue-core: #2979ff;
+            --cyan-holo: #00f3ff;
+            --orange-alert: #ffaa00;
+            --green-success: #00ff9d;
+            --purple-chem: #aa00ff;
+            --text-main: #e0e6ed;
+            --text-dim: #8faec5;
+            --border-dim: rgba(41, 121, 255, 0.3);
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-dark);
+            font-family: 'Rajdhani', sans-serif;
+            color: var(--text-main);
+            height: 100vh; width: 100vw; overflow: hidden;
+            display: flex;
+            background-image: 
+                linear-gradient(rgba(41, 121, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(41, 121, 255, 0.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 380px; background: rgba(8, 12, 20, 0.98);
+            border-right: 1px solid var(--border-dim);
+            display: flex; flex-direction: column;
+            padding: 20px 0; z-index: 10; flex-shrink: 0;
+            box-shadow: 10px 0 30px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        .brand { padding: 0 20px 20px; border-bottom: 1px solid var(--border-dim); margin-bottom: 10px; }
+        .brand h1 { margin: 0; font-size: 24px; color: #fff; letter-spacing: 1px; text-shadow: 0 0 15px var(--blue-core); font-weight: 800; }
+        .brand p { margin: 5px 0 0; font-size: 11px; color: var(--cyan-holo); font-family: 'JetBrains Mono'; letter-spacing: 1px; }
+
+        .panel {
+            padding: 0 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto;
+        }
+
+        h2 { font-size: 13px; color: #8faec5; margin: 10px 0 5px; letter-spacing: 2px; border-bottom: 1px solid var(--border-dim); padding-bottom: 5px; }
+
+        /* Inputs */
+        .func-input-wrapper {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.5); border: 1px solid var(--blue-core);
+            padding: 8px; border-radius: 4px;
+        }
+        .func-prefix { font-family: 'JetBrains Mono'; color: var(--blue-core); font-weight: bold; }
+        #customFunc {
+            background: transparent; border: none; color: #fff; flex: 1;
+            font-family: 'JetBrains Mono'; font-size: 16px; outline: none;
+        }
+        
+        .control-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .control-label { width: 60px; font-weight: bold; font-family: 'JetBrains Mono'; font-size: 14px; color: #889; }
+        .tech-input {
+            width: 70px; background: rgba(0,0,0,0.5); border: 1px solid #445;
+            color: #fff; font-family: 'JetBrains Mono'; font-size: 14px;
+            padding: 5px; text-align: center; outline: none;
+        }
+        .tech-input:focus { border-color: var(--cyan-holo); }
+
+        /* Method Tabs */
+        .method-tabs { display: flex; gap: 2px; margin-bottom: 10px; }
+        .tab-btn {
+            flex: 1; padding: 10px 5px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-dim);
+            color: var(--text-dim); cursor: pointer; font-family: 'Rajdhani'; font-weight: bold;
+            transition: 0.2s; text-align: center; font-size: 12px;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+        .tab-btn.active { background: var(--blue-core); color: #fff; border-color: var(--blue-core); text-shadow: 0 0 5px #fff; }
+
+        /* Slider */
+        input[type=range] { flex: 1; cursor: pointer; accent-color: var(--cyan-holo); }
+        .slider-val { font-family: 'JetBrains Mono'; color: var(--cyan-holo); font-weight: bold; width: 30px; text-align: right; }
+
+        /* Analysis Box */
+        .analysis-card {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border-dim);
+            padding: 15px; border-radius: 4px; margin-top: 10px;
+        }
+        .stat-row { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+        .stat-label { font-size: 11px; color: #889; letter-spacing: 1px; }
+        .stat-val { font-family: 'JetBrains Mono'; font-size: 16px; color: #fff; }
+        
+        .val-approx { color: var(--cyan-holo); }
+        .val-exact { color: var(--blue-core); }
+        .val-error { color: var(--orange-alert); }
+
+        /* Math Display */
+        .math-block { font-size: 0.9em; padding: 10px; background: rgba(255,255,255,0.03); border-left: 2px solid var(--orange-alert); margin-bottom: 10px; }
+
+        /* Oscilloscope */
+        .oscilloscope {
+            margin-top: auto; width: 100%; height: 60px;
+            background: linear-gradient(to bottom, transparent, rgba(41, 121, 255, 0.05), transparent);
+            position: relative; overflow: hidden; border-top: 1px solid var(--border-dim);
+        }
+        .wave-path {
+            position: absolute; top: 50%; left: 0; width: 200%; height: 2px;
+            background: repeating-linear-gradient(90deg, transparent, transparent 49px, var(--cyan-holo) 50px);
+            animation: waveFlow 2s linear infinite; transform: translateY(-50%);
+            box-shadow: 0 0 5px var(--cyan-holo);
+        }
+        @keyframes waveFlow { from { transform: translateX(0) translateY(-50%); } to { transform: translateX(-50px) translateY(-50%); } }
+
+        /* --- MAIN VIEWPORT --- */
+        .main-viewport {
+            flex: 1; position: relative; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        #plotDiv { flex: 1; width: 100%; height: 100%; }
+
+        .hud-overlay {
+            position: absolute; top: 20px; right: 20px; text-align: right; pointer-events: none; z-index: 20;
+        }
+        .hud-title { font-family: 'JetBrains Mono'; font-size: 12px; font-weight: bold; color: var(--cyan-holo); }
+        .hud-sub { font-family: 'JetBrains Mono'; font-size: 10px; color: #557799; }
+
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="brand">
+        <h1>IGNITE MATH LAB</h1>
+        <p>AREA ARCHITECT // RIEMANN SUMS</p>
+    </div>
+
+    <div class="panel">
+        
+        <!-- Function Input -->
+        <div>
+            <div style="font-size:10px; color:#aaa; margin-bottom:5px;">TARGET FUNCTION f(x)</div>
+            <div class="func-input-wrapper">
+                <span class="func-prefix">f(x) =</span>
+                <input type="text" id="customFunc" value="x^2 + 1" spellcheck="false">
+            </div>
+        </div>
+
+        <!-- Method Selector -->
+        <h2>// APPROXIMATION METHOD</h2>
+        <div class="method-tabs">
+            <div class="tab-btn active" onclick="setMethod('LRAM', this)">LRAM</div>
+            <div class="tab-btn" onclick="setMethod('RRAM', this)">RRAM</div>
+            <div class="tab-btn" onclick="setMethod('MRAM', this)">MRAM</div>
+            <div class="tab-btn" onclick="setMethod('TRAP', this)">TRAP</div>
+        </div>
+        
+        <div id="method-desc" class="math-block">
+            $$ \text{Left Sum: } \sum_{i=0}^{n-1} f(x_i)\Delta x $$
+        </div>
+
+        <!-- Parameters -->
+        <h2>// DOMAIN PARAMETERS</h2>
+        <div class="control-row">
+            <span class="control-label">START (a)</span>
+            <input type="number" id="input-a" class="tech-input" value="0" step="0.5">
+        </div>
+        <div class="control-row">
+            <span class="control-label">END (b)</span>
+            <input type="number" id="input-b" class="tech-input" value="4" step="0.5">
+        </div>
+
+        <!-- Slider N -->
+        <h2>// RECTANGLE RESOLUTION (n)</h2>
+        <div class="control-row">
+            <input type="range" id="slider-n" min="1" max="100" step="1" value="4">
+            <span id="val-n" class="slider-val">4</span>
+        </div>
+
+        <!-- Analysis -->
+        <h2>// DATA TELEMETRY</h2>
+        <div class="analysis-card">
+            <div class="stat-row">
+                <span class="stat-label">APPROX AREA</span>
+                <span id="stat-approx" class="stat-val val-approx">--</span>
+            </div>
+            <div class="stat-row">
+                <span class="stat-label">EXACT INTEGRAL</span>
+                <span id="stat-exact" class="stat-val val-exact">--</span>
+            </div>
+            <div style="border-top:1px dashed #334; margin:5px 0;"></div>
+            <div class="stat-row">
+                <span class="stat-label">ERROR MAGNITUDE</span>
+                <span id="stat-error" class="stat-val val-error">--</span>
+            </div>
+        </div>
+        
+        <div style="font-size:10px; color:#667; margin-top:10px;">
+            SCROLL TO ZOOM // DRAG TO PAN
+        </div>
+    </div>
+
+    <div class="oscilloscope"><div class="wave-path"></div></div>
+</div>
+
+<div class="main-viewport">
+    <div class="hud-overlay">
+        <div class="hud-title" id="hud-method">METHOD: LRAM (LEFT ENDPOINT)</div>
+        <div class="hud-sub">DX WIDTH: <span id="hud-dx">1.00</span></div>
+    </div>
+    <div id="plotDiv"></div>
+</div>
+
+<script>
+    // --- State ---
+    let state = {
+        exprStr: "x^2 + 1",
+        compiled: null,
+        a: 0,
+        b: 4,
+        n: 4,
+        method: 'LRAM', // LRAM, RRAM, MRAM, TRAP
+        exactVal: 0
+    };
+
+    const methodInfo = {
+        'LRAM': { name: "LRAM (LEFT ENDPOINT)", tex: "$$ \\text{Area} \\approx \\sum_{i=0}^{n-1} f(x_i)\\Delta x $$" },
+        'RRAM': { name: "RRAM (RIGHT ENDPOINT)", tex: "$$ \\text{Area} \\approx \\sum_{i=1}^{n} f(x_i)\\Delta x $$" },
+        'MRAM': { name: "MRAM (MIDPOINT)", tex: "$$ \\text{Area} \\approx \\sum_{i=0}^{n-1} f(\\frac{x_i+x_{i+1}}{2})\\Delta x $$" },
+        'TRAP': { name: "TRAPEZOIDAL RULE", tex: "$$ \\text{Area} \\approx \\frac{\\Delta x}{2} \\sum (f(x_i) + f(x_{i+1})) $$" }
+    };
+
+    // --- Init ---
+    function init() {
+        // Bind Events
+        document.getElementById('customFunc').addEventListener('change', updateSystem);
+        document.getElementById('input-a').addEventListener('input', updateSystem);
+        document.getElementById('input-b').addEventListener('input', updateSystem);
+        document.getElementById('slider-n').addEventListener('input', (e) => {
+            document.getElementById('val-n').innerText = e.target.value;
+            updateSystem();
+        });
+
+        updateSystem();
+        window.addEventListener('resize', () => Plotly.Plots.resize('plotDiv'));
+    }
+
+    function setMethod(m, btn) {
+        state.method = m;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update HUD and Math
+        document.getElementById('hud-method').innerText = `METHOD: ${methodInfo[m].name}`;
+        const mathEl = document.getElementById('method-desc');
+        mathEl.innerHTML = methodInfo[m].tex;
+        if(window.MathJax) MathJax.typesetPromise([mathEl]);
+
+        updateSystem();
+    }
+
+    // --- Logic ---
+    function f(x) {
+        try { return state.compiled.evaluate({x: x}); } catch(e) { return NaN; }
+    }
+
+    // Accurate numerical integration (Simpson's 1/3 Rule) for "Exact"
+    function integrate(a, b, n=1000) {
+        if(n % 2 !== 0) n++; // Simpson's needs even intervals
+        const h = (b - a) / n;
+        let sum = f(a) + f(b);
+        for(let i=1; i<n; i+=2) sum += 4 * f(a + i*h);
+        for(let i=2; i<n; i+=2) sum += 2 * f(a + i*h);
+        return (h/3) * sum;
+    }
+
+    function updateSystem() {
+        // 1. Read Inputs
+        state.exprStr = document.getElementById('customFunc').value;
+        state.a = parseFloat(document.getElementById('input-a').value);
+        state.b = parseFloat(document.getElementById('input-b').value);
+        state.n = parseInt(document.getElementById('slider-n').value);
+
+        // Parse Function
+        try {
+            state.compiled = math.compile(state.exprStr);
+            state.compiled.evaluate({x: 0}); // Test
+        } catch (e) { return; }
+
+        const dx = (state.b - state.a) / state.n;
+        document.getElementById('hud-dx').innerText = dx.toFixed(4);
+
+        // 2. Calculate Riemann Sum
+        let approxArea = 0;
+        let rectShapes = [];
+        let rectX = [], rectY = []; // For bar chart if applicable
+
+        // Pre-calculate Exact Area
+        const exact = integrate(state.a, state.b);
+        document.getElementById('stat-exact').innerText = exact.toFixed(4);
+
+        // --- Generate Shapes based on Method ---
+        // We use Plotly "shapes" (rectangles/paths) for precise drawing
+        
+        const shapes = [];
+        const barColor = 'rgba(0, 243, 255, 0.2)';
+        const barBorder = 'rgba(0, 243, 255, 0.8)';
+        const trapColor = 'rgba(255, 170, 0, 0.2)';
+        const trapBorder = 'rgba(255, 170, 0, 0.8)';
+
+        if (state.method === 'TRAP') {
+            // Trapezoids
+            for(let i=0; i<state.n; i++) {
+                let x1 = state.a + i*dx;
+                let x2 = state.a + (i+1)*dx;
+                let y1 = f(x1);
+                let y2 = f(x2);
+                
+                approxArea += 0.5 * (y1 + y2) * dx;
+
+                // SVG Path for Trapezoid
+                const path = `M ${x1},0 L ${x1},${y1} L ${x2},${y2} L ${x2},0 Z`;
+                shapes.push({
+                    type: 'path', path: path,
+                    fillcolor: trapColor, line: {color: trapBorder, width: 1}
+                });
+            }
+        } else {
+            // Rectangles (LRAM, RRAM, MRAM)
+            for(let i=0; i<state.n; i++) {
+                let xLeft = state.a + i*dx;
+                let xRight = state.a + (i+1)*dx;
+                let evalX;
+                
+                if(state.method === 'LRAM') evalX = xLeft;
+                else if(state.method === 'RRAM') evalX = xRight;
+                else evalX = (xLeft + xRight) / 2; // MRAM
+                
+                let height = f(evalX);
+                approxArea += height * dx;
+
+                shapes.push({
+                    type: 'rect',
+                    x0: xLeft, x1: xRight,
+                    y0: 0, y1: height,
+                    fillcolor: barColor, line: {color: barBorder, width: 1}
+                });
+                
+                // Add a point to show where we evaluated
+                rectX.push(evalX); rectY.push(height);
+            }
+        }
+
+        // 3. Update Stats
+        document.getElementById('stat-approx').innerText = approxArea.toFixed(4);
+        const error = Math.abs(exact - approxArea);
+        const percent = Math.abs(exact) > 0.0001 ? (error / Math.abs(exact) * 100).toFixed(2) + "%" : "N/A";
+        document.getElementById('stat-error').innerText = `${error.toFixed(4)} (${percent})`;
+
+        // 4. Plot Function Curve
+        const curveX = [], curveY = [];
+        const steps = 500;
+        // Draw slightly wider than [a, b] for context
+        const margin = (state.b - state.a) * 0.2;
+        for(let i=0; i<=steps; i++) {
+            let cx = (state.a - margin) + (state.b - state.a + 2*margin) * (i/steps);
+            curveX.push(cx); curveY.push(f(cx));
+        }
+
+        const traces = [
+            {
+                x: curveX, y: curveY, mode: 'lines', name: 'f(x)',
+                line: {color: '#2979ff', width: 3}, hoverinfo: 'none'
+            },
+            {
+                x: [state.a, state.a, state.b, state.b], 
+                y: [0, f(state.a), f(state.b), 0],
+                mode: 'markers', marker: {size: 0, opacity: 0}, hoverinfo: 'none' // Invisible anchors
+            }
+        ];
+
+        // If not trap, show evaluation points
+        if (state.method !== 'TRAP') {
+            traces.push({
+                x: rectX, y: rectY, mode: 'markers', name: 'Height',
+                marker: {color: '#fff', size: 6, line:{color:barBorder, width:1}}
+            });
+        }
+
+        const layout = {
+            paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+            margin: {l:40, r:20, t:20, b:30},
+            xaxis: { 
+                color: '#8faec5', gridcolor: 'rgba(255,255,255,0.1)', zerolinecolor: '#fff',
+                range: [state.a - margin, state.b + margin]
+            },
+            yaxis: { 
+                color: '#8faec5', gridcolor: 'rgba(255,255,255,0.1)', zerolinecolor: '#fff' 
+            },
+            shapes: shapes, // The Rectangles/Trapezoids
+            showlegend: false,
+            dragmode: 'pan'
+        };
+
+        Plotly.react('plotDiv', traces, layout, {displayModeBar: false, scrollZoom: true});
+    }
+
+    init();
+
+</script>
+</body>
+</html>

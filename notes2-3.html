@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGNITE NOTES // 2.3 DERIVATIVE PROOFS</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@500;600;700&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* =========================================
+           CORE VISUAL SYSTEM (Clean Version for Embed)
+           ========================================= */
+        :root {
+            --bg-void: #000000;
+            --arc-cyan: #00f3ff; 
+            --arc-blue: #0077ff;
+            --arc-orange: #ff5500;
+            --arc-green: #00ff9d;
+            --border-dim: rgba(0, 243, 255, 0.15);
+            
+            --font-ui: 'Rajdhani', sans-serif;
+            --font-tech: 'Share Tech Mono', monospace;
+            --font-body: 'Inter', 'Noto Sans SC', sans-serif;
+            --font-math: 'Times New Roman', serif;
+        }
+
+        * { box-sizing: border-box; }
+        *::-webkit-scrollbar { width: 4px; }
+        *::-webkit-scrollbar-track { background: #000; }
+        *::-webkit-scrollbar-thumb { background: var(--arc-blue); }
+
+        body {
+            background-color: transparent; 
+            color: #e0f0ff;
+            font-family: var(--font-body);
+            margin: 0; padding: 20px; 
+            line-height: 1.6;
+            overflow-x: hidden; 
+        }
+
+        .note-brand {
+            font-family: var(--font-ui);
+            font-weight: 800;
+            font-size: 24px;
+            color: #fff;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--arc-cyan);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .container { max-width: 100%; margin: 0 auto; padding-bottom: 100px; }
+
+        /* HUD Panels */
+        .hud-panel {
+            background: rgba(10, 15, 20, 0.6);
+            border: 1px solid var(--border-dim);
+            margin-bottom: 40px;
+            position: relative;
+            backdrop-filter: blur(5px);
+            transition: border-color 0.3s;
+        }
+        
+        .hud-panel:hover { border-color: rgba(0, 243, 255, 0.4); }
+
+        /* Corner Accents */
+        .corner-decor {
+            position: absolute; width: 10px; height: 10px; pointer-events: none;
+            border-color: var(--arc-cyan); border-style: solid;
+            transition: all 0.3s;
+        }
+        .c-tl { top: -1px; left: -1px; border-width: 2px 0 0 2px; }
+        .c-tr { top: -1px; right: -1px; border-width: 2px 2px 0 0; }
+        .c-bl { bottom: -1px; left: -1px; border-width: 0 0 2px 2px; }
+        .c-br { bottom: -1px; right: -1px; border-width: 0 2px 2px 0; }
+        
+        .panel-header {
+            padding: 15px 25px; border-bottom: 1px solid var(--border-dim);
+            display: flex; align-items: center; gap: 15px;
+            background: linear-gradient(90deg, rgba(0, 243, 255, 0.05), transparent);
+        }
+        .panel-id { font-family: var(--font-tech); color: var(--arc-cyan); font-weight: bold; font-size: 14px; opacity: 0.8; }
+        .panel-title { font-family: var(--font-ui); font-size: 20px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 2px; }
+
+        .panel-body { padding: 30px; }
+
+        /* Typography */
+        h1 { 
+            font-family: var(--font-ui); font-size: 42px; color: #fff; margin: 0 0 5px 0; 
+            text-transform: uppercase; letter-spacing: 4px; line-height: 0.9;
+        }
+        h2 { font-family: var(--font-ui); font-size: 28px; color: #fff; margin: 0 0 20px 0; }
+        h3 { font-family: var(--font-ui); font-size: 18px; color: var(--arc-cyan); margin: 30px 0 15px 0; border-left: 3px solid var(--arc-blue); padding-left: 10px; letter-spacing: 1px; }
+
+        .bilingual { margin-bottom: 15px; }
+        .en-text { color: #e0f0ff; margin-bottom: 4px; display: block; font-size: 16px; }
+        .cn-text { color: #789; font-size: 13px; display: block; font-family: 'Noto Sans SC'; }
+
+        /* Video Feed Wrapper */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 standard */
+            height: 0;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid rgba(0, 243, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            transition: border-color 0.3s;
+        }
+        .video-wrapper:hover {
+            border-color: var(--arc-cyan);
+        }
+        .video-wrapper video, .video-wrapper iframe {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border: none;
+        }
+
+        /* Math Blocks */
+        .math-block {
+            background: rgba(0,0,0,0.6); 
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px; margin: 20px 0; text-align: center;
+            font-family: var(--font-math); font-size: 1.25rem; color: #fff;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        /* Visualization Cards */
+        .vis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+        .vis-card {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1);
+            padding: 15px; transition: 0.3s; position: relative;
+        }
+        .vis-card:hover { border-color: var(--arc-cyan); background: rgba(0, 243, 255, 0.05); }
+        .vis-title { font-family: var(--font-tech); font-weight: 700; color: var(--arc-cyan); margin-bottom: 10px; letter-spacing: 1px; font-size: 12px; }
+        
+        canvas { width: 100%; height: 180px; background: #050505; border-bottom: 1px solid #222; margin-bottom: 10px; }
+
+        /* Interactive Elements */
+        .practice-box {
+            border: 1px dashed var(--border-dim); padding: 25px; margin: 20px 0;
+            background: rgba(41, 121, 255, 0.03); position: relative;
+        }
+        .btn-reveal {
+            background: transparent; border: 1px solid var(--arc-cyan); color: var(--arc-cyan);
+            padding: 10px 25px; font-family: var(--font-ui); font-weight: 700; letter-spacing: 1px;
+            cursor: pointer; transition: 0.3s; font-size: 13px; margin-top: 20px;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+        }
+        .btn-reveal:hover { background: rgba(0, 243, 255, 0.15); color: #fff; box-shadow: 0 0 15px rgba(0, 243, 255, 0.2); }
+        
+        .solution-panel {
+            margin-top: 20px; padding: 20px; border-left: 2px solid var(--arc-green);
+            background: rgba(0, 255, 157, 0.05); display: none; animation: slideIn 0.3s ease;
+        }
+        .solution-panel.active { display: block; }
+        .sol-header { color: var(--arc-green); font-family: var(--font-tech); font-weight: bold; margin-bottom: 10px; letter-spacing: 1px; }
+
+        table { width: 100%; border-collapse: collapse; margin: 15px 0; font-family: var(--font-tech); font-size: 13px; }
+        th, td { border: 1px solid rgba(255,255,255,0.1); padding: 12px; text-align: center; }
+        th { background: rgba(0, 243, 255, 0.05); color: var(--arc-cyan); text-transform: uppercase; }
+
+        @keyframes slideIn { from{opacity:0; transform:translateX(-10px);} to{opacity:1; transform:translateX(0);} }
+        
+        @media (max-width: 768px) { .vis-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+    <div class="note-brand">IGNITE NOTES //</div>
+
+    <div class="container">
+        
+        <header style="margin-bottom: 40px;">
+            <h1>Unit 2.3 Derivative Proofs</h1>
+            <div style="font-family:var(--font-tech); color:var(--arc-blue); letter-spacing:1px;">MODULE: FORMAL MATHEMATICAL PROOFS & TRIG LIMITS</div>
+        </header>
+
+        <!-- SECTION 00: Lecture Video Feed -->
+        <section id="lecture-video" class="hud-panel" style="border-color: var(--arc-green);">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+            
+            <div class="panel-header" style="background: linear-gradient(90deg, rgba(0, 255, 157, 0.05), transparent);">
+                <span class="panel-id" style="color: var(--arc-green);">00</span>
+                <span class="panel-title" style="color: #fff;">Lecture Video Stream</span>
+            </div>
+            <div class="panel-body">
+                <div class="bilingual">
+                    <span class="en-text">Review the core lecture recording for Unit 2.3: Derivative Proofs.</span>
+                    <span class="cn-text">观看 2.3 导数公式证明与数学推导 核心授课录像 [1]。</span>
+                </div>
+                
+                <div class="video-wrapper">
+                    <video id="notesVideo" controls>
+                        <source src="lecture2-3.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 01: Algebraic Proofs (Power & Product Rules) -->
+        <section id="algebraic-proofs" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+            
+            <div class="panel-header">
+                <span class="panel-id">01</span>
+                <span class="panel-title">Proofs of Power & Product Rules</span>
+            </div>
+            <div class="panel-body">
+                <h3>Proof of the Power Rule (Binomial Expansion)</h3>
+                <div class="bilingual">
+                    <span class="en-text">This proof demonstrates why the power rule works for positive integer exponents. It relies on the limit definition of the derivative and the Binomial Theorem expansion [8].</span>
+                    <span class="cn-text">本推导展示了为什么幂法则适用于正整数指数。推导完全基于导数的极限定义以及二项式定理的展开式 [8]。</span>
+                </div>
+
+                <div class="math-block">
+                    \[\begin{aligned}
+                    f'(x) &= \lim_{h\to0} \frac{(x+h)^n - x^n}{h} \quad \text{[Limit definition]} \\
+                    &= \lim_{h\to0} \frac{\left(x^n + nx^{n-1}h + \frac{n(n-1)}{2}x^{n-2}h^2 + \cdots + h^n\right) - x^n}{h} \quad \text{[Binomial expansion]} \\
+                    &= \lim_{h\to0} \frac{h\left(nx^{n-1} + \frac{n(n-1)}{2}x^{n-2}h + \cdots + h^{n-1}\right)}{h} \quad \text{[Cancel } x^n \text{ and factor } h\text{]} \\
+                    &= \lim_{h\to0} \left(nx^{n-1} + \frac{n(n-1)}{2}x^{n-2}h + \cdots + h^{n-1}\right) \\
+                    &= nx^{n-1} + 0 + \cdots + 0 = \mathbf{nx^{n-1}} \quad \text{[Evaluate limit as } h \to 0\text{]}
+                    \end{aligned} \quad [8]\]
+                </div>
+
+                <h3>Proof of the Product Rule (The Add/Subtract Trick)</h3>
+                <div class="bilingual">
+                    <span class="en-text">To prove the product rule, we manipulate the limit definition algebraically. The crucial step is an algebraic trick: adding and subtracting the term \(f(x+h)g(x)\) in the numerator to factor by grouping [8, 9].</span>
+                    <span class="cn-text">在推导乘法求导法则时，核心代数技巧是在分子中<b>同时加上并减去</b> \(f(x+h)g(x)\)，以便通过分组分解因式 [8, 9]。</span>
+                </div>
+
+                <div class="math-block">
+                    \[\begin{aligned}
+                    \frac{d}{dx}[f(x)g(x)] &= \lim_{h\to0} \frac{f(x+h)g(x+h) - f(x)g(x)}{h} \\
+                    &= \lim_{h\to0} \frac{f(x+h)g(x+h) \mathbf{- f(x+h)g(x) + f(x+h)g(x)} - f(x)g(x)}{h} \\
+                    &= \lim_{h\to0} \left( f(x+h) \cdot \frac{g(x+h)-g(x)}{h} + g(x) \cdot \frac{f(x+h)-f(x)}{h} \right) \quad \text{[Group \& split]} \\
+                    &= \left(\lim_{h\to0} f(x+h)\right) \cdot g'(x) + g(x) \cdot f'(x) \\
+                    &= \mathbf{f(x)g'(x) + f'(x)g(x)} \quad \text{[Since } f \text{ is continuous, } \lim_{h\to0}f(x+h)=f(x)\text{]}
+                    \end{aligned} \quad [9]\]
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 02: Quotient Rule & Trigonometric Proofs -->
+        <section id="trig-quotient" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+
+            <div class="panel-header">
+                <span class="panel-id">02</span>
+                <span class="panel-title">Quotient Rule & Sine Derivative Proofs</span>
+            </div>
+            <div class="panel-body">
+                <h3>Proof of the Quotient Rule (Fast Product Rule Method)</h3>
+                <div class="bilingual">
+                    <span class="en-text">While the quotient rule can be proven using limits, it is much faster to prove using the Product Rule by setting up \(Q(x) = f(x)/g(x)\), rewriting it as multiplication, and differentiating [9].</span>
+                    <span class="cn-text">虽然商法则可以直接用极限定义来证明，但通过将商写为积的形式 \(Q(x)g(x) = f(x)\)，然后使用乘积法则求导，可以实现极为快速和精简的数学推导 [9]。</span>
+                </div>
+
+                <div class="math-block" style="text-align: left; padding-left: 30px;">
+                    Let \(Q(x) = \frac{f(x)}{g(x)} \quad \implies \quad Q(x)g(x) = f(x)\) [9]<br><br>
+                    Differentiate both sides using the Product Rule [9]:<br>
+                    \(Q'(x)g(x) + Q(x)g'(x) = f'(x)\) [9]<br><br>
+                    Isolate \(Q'(x)\) and back-substitute \(Q(x)\) [9]:<br>
+                    \(Q'(x)g(x) = f'(x) - Q(x)g'(x)\) [9]<br>
+                    \(Q'(x) = \frac{f'(x) - \left(\frac{f(x)}{g(x)}\right)g'(x)}{g(x)}\) [9]<br><br>
+                    Multiply numerator and denominator by \(g(x)\) [9]:<br>
+                    \[Q'(x) = \mathbf{\frac{f'(x)g(x) - f(x)g'(x)}{[g(x)]^2}}\]
+                </div>
+
+                <h3>Proof of the Sine Derivative (Limits & Trig Identities)</h3>
+                <div class="bilingual">
+                    <span class="en-text">Trigonometric proofs rely heavily on the angle addition identity \(\sin(A+B)\) and two special trigonometric limits that act as prerequisites [10].</span>
+                    <span class="cn-text">正弦函数导数的推导需要使用和角公式 \(\sin(A+B)\) 展开，并依赖于两个重要的三角学极限先决条件 [10]。</span>
+                </div>
+
+                <div class="math-block">
+                    \[\begin{aligned}
+                    \frac{d}{dx}[\sin x] &= \lim_{h\to0} \frac{\sin(x+h) - \sin x}{h} \\
+                    &= \lim_{h\to0} \frac{(\sin x \cos h + \cos x \sin h) - \sin x}{h} \quad \text{[Angle addition identity]} \\
+                    &= \lim_{h\to0} \frac{\sin x(\cos h - 1) + \cos x \sin h}{h} \quad \text{[Group terms]} \\
+                    &= \sin x \cdot \left(\lim_{h\to0} \frac{\cos h - 1}{h}\right) + \cos x \cdot \left(\lim_{h\to0} \frac{\sin h}{h}\right) \quad \text{[Split limits]} \\
+                    &= (\sin x)(0) + (\cos x)(1) = \mathbf{\cos x} \quad \text{[Substitute special limits]}
+                    \end{aligned} \quad [10]\]
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 03: Trig Limit Visualizers -->
+        <section id="limit-visualizations" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+
+            <div class="panel-header">
+                <span class="panel-id">03</span>
+                <span class="panel-title">Prerequisite Trigonometric Limits</span>
+            </div>
+            <div class="panel-body">
+                <div class="bilingual">
+                    <span class="en-text">Visualizing the two fundamental limits required for trigonometric differentiation as \(h \to 0\) [10].</span>
+                    <span class="cn-text">图形化呈现三角求导证明中必不可少的两个基本极限条件在 \(h \to 0\) 时的收敛状态 [10]。</span>
+                </div>
+
+                <div class="vis-grid">
+                    <div class="vis-card">
+                        <div class="vis-title">01 // SPECIAL LIMIT 01 (\(\lim_{h\to0}\frac{\sin h}{h} = 1\))</div>
+                        <canvas id="c-sinc"></canvas>
+                        <div class="bilingual" style="font-size:12px;">
+                            <span class="en-text">As \(h \to 0\), the ratio of the arc length to chord length approaches 1 [10].</span>
+                            <span class="cn-text">当自变量 \(h\) 无限逼近于 0 时，正弦值与该弧度的比值精准收敛于 1 [10]。</span>
+                        </div>
+                    </div>
+                    <div class="vis-card">
+                        <div class="vis-title">02 // SPECIAL LIMIT 02 (\(\lim_{h\to0}\frac{\cos h - 1}{h} = 0\))</div>
+                        <canvas id="c-coslim"></canvas>
+                        <div class="bilingual" style="font-size:12px;">
+                            <span class="en-text">As \(h \to 0\), the rate of vertical displacement from 1 vanishes to 0 [10].</span>
+                            <span class="cn-text">当 \(h \to 0\) 时，余弦值偏离顶点 1 的垂直位移速率降为 0 [10]。</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 04: Worked Examples -->
+        <section id="examples" class="hud-panel">
+            <div class="corner-decor c-tl"></div><div class="corner-decor c-tr"></div>
+            <div class="corner-decor c-bl"></div><div class="corner-decor c-br"></div>
+
+            <div class="panel-header">
+                <span class="panel-id">04</span>
+                <span class="panel-title">Proof-Based Worked Examples</span>
+            </div>
+            <div class="panel-body">
+                
+                <div class="practice-box">
+                    <h4 style="color:var(--arc-cyan); margin-top:0; font-family:var(--font-ui);">Example 01: Limit Proof of Cosine Derivative</h4>
+                    <div class="bilingual">
+                        <span class="en-text">Use the limit definition of the derivative and trig identities to prove that \(\frac{d}{dx}[\cos x] = -\sin x\).</span>
+                        <span class="cn-text">套用导数的极限定义与三角恒等式，证明余弦函数的导数为 \(-\sin x\)。</span>
+                    </div>
+                    <button class="btn-reveal" onclick="toggle('sol-1')">DECRYPT PROOF PROCESS</button>
+                    
+                    <div id="sol-1" class="solution-panel">
+                        <div class="sol-header">SYSTEM LOG: Trigonometric Proof Protocol Initialized</div>
+                        <div class="bilingual">
+                            <span class="en-text">Angle Addition: \(\cos(x+h) = \cos x \cos h - \sin x \sin h\).</span>
+                            <span class="cn-text">余弦的和角公式：\(\cos(x+h) = \cos x \cos h - \sin x \sin h\)。</span>
+                        </div>
+                        <div class="math-block" style="text-align:left; padding:15px; font-size:1.15rem;">
+                            \[\begin{aligned}
+                            \frac{d}{dx}[\cos x] &= \lim_{h\to0} \frac{\cos(x+h) - \cos x}{h} \\
+                            &= \lim_{h\to0} \frac{(\cos x \cos h - \sin x \sin h) - \cos x}{h} \\
+                            &= \lim_{h\to0} \frac{\cos x(\cos h - 1) - \sin x \sin h}{h} \quad \text{[Group terms]} \\
+                            &= \cos x \cdot \left(\lim_{h\to0} \frac{\cos h - 1}{h}\right) - \sin x \cdot \left(\lim_{h\to0} \frac{\sin h}{h}\right) \quad \text{[Split limits]} \\
+                            &= (\cos x)(0) - (\sin x)(1) = \mathbf{-\sin x} \quad \text{[Substitute special limit values]}
+                            \end{aligned}\]
+                        </div>
+                    </div>
+                </div>
+
+                <div class="practice-box">
+                    <h4 style="color:var(--arc-orange); margin-top:0; font-family:var(--font-ui);">Example 02: Secant Proof via Quotient Rule</h4>
+                    <div class="bilingual">
+                        <span class="en-text">Use the Quotient Rule to prove that \(\frac{d}{dx}[\sec x] = \sec x \tan x\), rewriting \(\sec x\) as \(\frac{1}{\cos x}\).</span>
+                        <span class="cn-text">利用商法则推导割线函数 \(\sec x\) 的导数为 \(\sec x \tan x\)（提示：将 \(\sec x\) 重写为 \(\frac{1}{\cos x}\)）。</span>
+                    </div>
+                    <button class="btn-reveal" onclick="toggle('sol-2')">DECRYPT PROOF PROCESS</button>
+                    
+                    <div id="sol-2" class="solution-panel">
+                        <div class="sol-header">SYSTEM LOG: Reciprocal Derivative Algorithm</div>
+                        <div class="bilingual">
+                            <span class="en-text">Numerator \(f(x) = 1 \implies f'(x) = 0\), Denominator \(g(x) = \cos x \implies g'(x) = -\sin x\).</span>
+                            <span class="cn-text">设分子 \(f(x) = 1 \implies f'(x) = 0\)，分母 \(g(x) = \cos x \implies g'(x) = -\sin x\)。</span>
+                        </div>
+                        <div class="math-block" style="text-align:left; padding:15px; font-size:1.15rem;">
+                            \[\begin{aligned}
+                            \frac{d}{dx}[\sec x] &= \frac{d}{dx}\left[\frac{1}{\cos x}\right] \\
+                            &= \frac{(0)(\cos x) - (1)(-\sin x)}{\cos^2 x} \quad \text{[Apply Quotient Rule: } \frac{f'g - fg'}{g^2}\text{]} \\
+                            &= \frac{\sin x}{\cos^2 x} \\
+                            &= \frac{1}{\cos x} \cdot \frac{\sin x}{\cos x} \quad \text{[Split fraction]} \\
+                            &= \mathbf{\sec x \tan x} \quad \text{[Apply trigonometric identities]}
+                            \end{aligned}\]
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Toggle Solution Logic
+        function toggle(id) {
+            const el = document.getElementById(id);
+            el.classList.toggle('active');
+        }
+
+        // CANVAS GRAPHICS GENERATION ENGINE
+        function drawConcept(id, type) {
+            const canvas = document.getElementById(id);
+            const ctx = canvas.getContext('2d');
+            
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            const w = rect.width;
+            const h = rect.height;
+            ctx.clearRect(0, 0, w, h);
+            
+            const padding = 20;
+            
+            // Draw Coordinate Axes
+            ctx.beginPath(); ctx.strokeStyle = '#222'; ctx.lineWidth = 1;
+            ctx.moveTo(padding, h/2); ctx.lineTo(w - padding, h/2); // X-Axis
+            ctx.moveTo(w/2, padding); ctx.lineTo(w/2, h - padding); // Y-Axis
+            ctx.stroke();
+
+            const cx = w / 2;
+            const cy = h / 2;
+
+            if (type === 'SINC') {
+                const scaleX = (w - 2 * padding) / (2 * Math.PI);
+                const scaleY = (h - 2 * padding) / 1.5;
+
+                // Target height at (0, 1)
+                const targetY = cy - 1 * scaleY;
+
+                // Draw Sinc Curve y = sin(x)/x
+                ctx.beginPath(); ctx.strokeStyle = '#00f3ff'; ctx.lineWidth = 2;
+                for (let sx = -Math.PI; sx <= Math.PI; sx += 0.05) {
+                    if (Math.abs(sx) < 0.001) continue; // Skip x=0 to avoid division by zero
+                    let sy = Math.sin(sx) / sx;
+                    let screenX = cx + sx * scaleX;
+                    let screenY = cy - sy * scaleY;
+                    if (sx === -Math.PI) ctx.moveTo(screenX, screenY); else ctx.lineTo(screenX, screenY);
+                }
+                ctx.stroke();
+
+                // Highlight Limit Hole at (0, 1)
+                ctx.fillStyle = '#ff5500';
+                ctx.beginPath(); ctx.arc(cx, targetY, 4, 0, Math.PI * 2); ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#ff5500'; ctx.font = '10px Share Tech Mono';
+                ctx.fillText('Limit = 1', cx + 10, targetY + 3);
+                ctx.fillStyle = '#00f3ff';
+                ctx.fillText('y = sin(h)/h', padding + 10, cy - 35);
+
+            } else if (type === 'COSLIM') {
+                const scaleX = (w - 2 * padding) / (2 * Math.PI);
+                const scaleY = (h - 2 * padding) / 1.5;
+
+                // Target point at (0, 0)
+                const targetY = cy;
+
+                // Draw y = (cos(x) - 1)/x Curve
+                ctx.beginPath(); ctx.strokeStyle = '#00ff9d'; ctx.lineWidth = 2;
+                for (let sx = -Math.PI; sx <= Math.PI; sx += 0.05) {
+                    if (Math.abs(sx) < 0.001) continue; // Skip x=0
+                    let sy = (Math.cos(sx) - 1) / sx;
+                    let screenX = cx + sx * scaleX;
+                    let screenY = cy - sy * scaleY;
+                    if (sx === -Math.PI) ctx.moveTo(screenX, screenY); else ctx.lineTo(screenX, screenY);
+                }
+                ctx.stroke();
+
+                // Highlight Limit Hole at (0, 0)
+                ctx.fillStyle = '#ff5500';
+                ctx.beginPath(); ctx.arc(cx, targetY, 4, 0, Math.PI * 2); ctx.fill();
+
+                // Label
+                ctx.fillStyle = '#ff5500'; ctx.font = '10px Share Tech Mono';
+                ctx.fillText('Limit = 0', cx + 10, targetY - 8);
+                ctx.fillStyle = '#00ff9d';
+                ctx.fillText('y = (cos(h) - 1)/h', padding + 10, cy - 35);
+            }
+        }
+
+        window.onload = () => {
+            drawConcept('c-sinc', 'SINC'); 
+            drawConcept('c-coslim', 'COSLIM');
+        }
+    </script>
+</body>
+</html>
