@@ -1,0 +1,42 @@
+<!-- 唤醒按钮 -->
+<div class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebar()">
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+        <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/>
+    </svg>
+    <span>MODULES</span>
+</div>
+
+<!-- 遮罩层 -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- 侧边栏面板 -->
+<div class="nav-panel-container" id="navPanel">
+    <div class="return-console">
+        <div class="sys-return-btn" onclick="window.location.href='index.html'">◄ RETURN INDEX</div>
+        <div class="sys-return-btn" onclick="toggleSidebar()" style="margin-top:10px; border-color:rgba(255,85,0,0.5); color:#fa0;">✕ CLOSE PANEL</div>
+    </div>
+
+    <div class="nav-scroll-area">
+        <!-- 举例：第1章 -->
+        <div class="nav-unit-btn" onclick="toggleUnit(this)">
+            <div class="nb-id">UNIT 01</div><div class="nb-title">LIMITS & FOUNDATIONS</div><div class="nb-cn-main">第1章：极限与基础</div><div class="arrow-indicator">▶</div>
+            <div class="nav-sub-menu">
+                <div class="nav-sub-item" onclick="loadPage('1-1')"><div class="nsi-en">1.1 Intuition & Estimation</div><div class="nsi-cn">极限的直观理解与数值估算</div></div>
+                <div class="nav-sub-item" onclick="loadPage('1-2')"><div class="nsi-en">1.2 Analytic Calculation</div><div class="nsi-cn">极限的解析计算 (代入/因式)</div></div>
+            </div>
+        </div>
+
+        <!-- 第2章 (默认展开只需加 active 并在 style 设为 block) -->
+        <div class="nav-unit-btn active" onclick="toggleUnit(this)">
+            <div class="nb-id">UNIT 02</div><div class="nb-title">THE DERIVATIVE</div><div class="nb-cn-main">第2章：导数</div><div class="arrow-indicator">▶</div>
+            <div class="nav-sub-menu" style="display:block;">
+                <div class="nav-sub-item current" onclick="event.stopPropagation()">
+                    <div class="nsi-en">2.1 Derivatives</div><div class="nsi-cn">导数的定义</div>
+                </div>
+                <div class="nav-sub-item" onclick="loadPage('2-2')"><div class="nsi-en">2.2 Derivative Rules</div><div class="nsi-cn">导数基本法则与计算</div></div>
+            </div>
+        </div>
+        
+        <!-- 你可以继续把其他章节复制到这里... -->
+    </div>
+</div>
