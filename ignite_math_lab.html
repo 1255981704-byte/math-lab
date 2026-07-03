@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGNITE: STARK LAB</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+code
+Code
+<style>
+    :root {
+        /* 保持 V7 的配色 */
+        --stark-bg: #000510;
+        --hologram-cyan: #00f3ff;
+        --hologram-blue: #0077ff;
+        --glass-border: rgba(0, 243, 255, 0.3);
+        --text-main: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; padding: 0;
+        background-color: var(--stark-bg);
+        font-family: 'Rajdhani', sans-serif;
+        color: var(--text-main);
+        height: 100vh; width: 100vw;
+        overflow: hidden;
+        display: flex; flex-direction: column;
+        background: radial-gradient(circle at 70% 50%, #0a1f3d 0%, #000510 70%);
+    }
+
+    /* --- 特效背景 --- */
+    .hologram-grid {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-image: 
+            linear-gradient(rgba(0, 243, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0, 243, 255, 0.05) 1px, transparent 1px);
+        background-size: 60px 60px;
+        perspective: 1000px; pointer-events: none; z-index: 0;
+    }
+    .reactor {
+        position: fixed; right: -10%; bottom: -10%;
+        border: 1px solid rgba(0, 243, 255, 0.15); border-radius: 50%;
+        pointer-events: none; z-index: 0;
+    }
+    .r1 { width: 60vh; height: 60vh; animation: spin 20s linear infinite; border-top-color: var(--hologram-cyan); }
+    .r2 { width: 80vh; height: 80vh; animation: spin 40s linear infinite reverse; border-left-color: var(--hologram-cyan); }
+    @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* --- 头部 --- */
+    header {
+        height: 80px; padding: 0 50px;
+        display: flex; align-items: center; justify-content: space-between;
+        border-bottom: 1px solid var(--glass-border);
+        background: rgba(0, 10, 20, 0.6); backdrop-filter: blur(10px); z-index: 10;
+    }
+    .logo-box h1 {
+        margin: 0; font-size: 32px; letter-spacing: 2px;
+        background: linear-gradient(90deg, #fff, var(--hologram-cyan));
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 20px rgba(0, 243, 255, 0.4); font-weight: 700;
+    }
+    .logo-box span { font-size: 14px; color: var(--hologram-cyan); letter-spacing: 6px; display: block; }
+
+    /* --- 主布局 --- */
+    .container { flex: 1; display: flex; z-index: 10; overflow: hidden; }
+
+    .module-deck {
+        flex: 1; padding: 40px 60px; overflow-y: auto;
+        scrollbar-width: none;
+    }
+    .module-deck::-webkit-scrollbar { display: none; }
+
+    .deck-title {
+        font-family: 'JetBrains Mono'; color: var(--hologram-cyan); font-size: 12px;
+        border-bottom: 1px solid var(--glass-border); padding-bottom: 5px; margin: 30px 0 20px 0;
+        display: flex; justify-content: space-between;
+    }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+
+    /* --- 卡片样式 --- */
+    .card {
+        background: rgba(0, 20, 40, 0.4);
+        border: 1px solid var(--glass-border);
+        padding: 20px; height: 110px;
+        position: relative; overflow: hidden;
+        transition: all 0.3s; cursor: pointer;
+        display: flex; flex-direction: column; justify-content: center;
+    }
+    
+    .corner {
+        position: absolute; width: 8px; height: 8px;
+        border: 2px solid var(--hologram-cyan); 
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        opacity: 0.5;
+    }
+    .tl { top: 0; left: 0; border-right: none; border-bottom: none; }
+    .tr { top: 0; right: 0; border-left: none; border-bottom: none; }
+    .bl { bottom: 0; left: 0; border-right: none; border-top: none; }
+    .br { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+    .card:hover { background: rgba(0, 243, 255, 0.05); }
+    .card:hover .corner { width: 100%; height: 100%; opacity: 0.2; } 
+
+    .card.active {
+        background: rgba(0, 119, 255, 0.15);
+        border-color: var(--hologram-blue);
+        box-shadow: 0 0 30px rgba(0, 119, 255, 0.2) inset;
+    }
+    .card.active .corner {
+        width: 12px; height: 12px; opacity: 1;
+        border-color: #fff;
+        box-shadow: 0 0 10px var(--hologram-cyan);
+    }
+    .card.active .tl { top: 6px; left: 6px; }
+    .card.active .tr { top: 6px; right: 6px; }
+    .card.active .bl { bottom: 6px; left: 6px; }
+    .card.active .br { bottom: 6px; right: 6px; }
+    
+    .c-id { font-family: 'JetBrains Mono'; font-size: 10px; color: var(--hologram-blue); margin-bottom: 5px; }
+    .c-name { font-size: 18px; font-weight: 700; color: #ccddff; text-transform: uppercase; }
+    .card.active .c-name { color: #fff; text-shadow: 0 0 10px var(--hologram-blue); }
+
+    /* --- 右侧面板 --- */
+    .sidebar {
+        width: 400px;
+        background: rgba(0, 5, 10, 0.9);
+        border-left: 1px solid var(--glass-border);
+        display: flex; flex-direction: column;
+        padding: 40px;
+        box-shadow: -20px 0 50px rgba(0,0,0,0.8);
+        position: relative;
+    }
+
+    .info-container {
+        flex: 1; opacity: 0.3; transition: 0.5s;
+        display: flex; flex-direction: column; gap: 25px;
+    }
+    .info-container.active { opacity: 1; }
+
+    .info-item { border-left: 2px solid #334; padding-left: 15px; transition: 0.3s; }
+    .info-container.active .info-item { border-color: var(--hologram-blue); }
+    
+    .label { font-family: 'JetBrains Mono'; font-size: 9px; color: #667788; display: block; margin-bottom: 4px; letter-spacing: 1px; }
+    .value { font-size: 18px; color: #fff; font-weight: 600; text-transform: uppercase; }
+    .value-glow { color: #fff; text-shadow: 0 0 10px var(--hologram-blue); }
+    .desc-text { font-family: 'JetBrains Mono'; font-size: 12px; color: #8899aa; line-height: 1.6; margin-top: 5px; }
+
+    .login-section { margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 30px; }
+    .input-line {
+        width: 100%; background: transparent; border: none;
+        border-bottom: 1px solid #335577; color: #fff;
+        font-family: 'Rajdhani'; font-size: 16px; padding: 10px 0; margin-bottom: 20px;
+    }
+    .input-line:focus { outline: none; border-bottom-color: var(--hologram-cyan); }
+
+    .arc-btn {
+        width: 100%; padding: 16px;
+        background: transparent; border: 1px solid #445; color: #556;
+        font-family: 'JetBrains Mono'; font-weight: bold; font-size: 13px; letter-spacing: 2px;
+        text-transform: uppercase; cursor: not-allowed; transition: 0.3s;
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    .arc-btn.ready {
+        background: rgba(0, 119, 255, 0.1);
+        border-color: var(--hologram-blue);
+        color: #fff;
+        box-shadow: 0 0 20px rgba(0, 119, 255, 0.2);
+        cursor: pointer;
+    }
+    .arc-btn.ready:hover {
+        background: rgba(0, 119, 255, 0.25);
+        box-shadow: 0 0 30px rgba(0, 119, 255, 0.3);
+        text-shadow: 0 0 8px rgba(255,255,255,0.7);
+    }
+
+</style>
+</head>
+<body>
+code
+Code
+<div class="hologram-grid"></div>
+<div class="reactor r1"></div>
+<div class="reactor r2"></div>
+
+<header>
+    <div class="logo-box">
+        <h1>IGNITE MATH LAB</h1>
+        <span>SYSTEM INTERFACE</span>
+    </div>
+    <div style="font-family:'JetBrains Mono'; font-size:10px; color:#00f3ff;">● SECURE</div>
+</header>
+
+<div class="container">
+    
+    <div class="module-deck">
+        
+        <!-- SECTOR 01: AP 课程 -->
+        <div class="deck-title"><span>SECTOR 01 // AP</span><span>COLLEGE BOARD</span></div>
+        <div class="grid">
+            <!-- 注意这里：路径是 ap-precal/index.html -->
+            <div class="card" onclick="select(this, 'AP Precalculus', 'ap-precal/index.html', 'Grade 9-11', 'Foundational analysis of functions, trigonometry, and complex numbers.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">UNIT 01-04</span><span class="c-name">AP Precal</span>
+            </div>
+
+            <!-- 注意这里：路径是 ap-calculus-ab/index.html -->
+            <div class="card" onclick="select(this, 'AP Calculus AB', 'ap-calculus-ab/index.html', 'Grade 10-12', 'Limits, derivatives, integrals, and the fundamental theorem of calculus.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">UNIT 01-08</span><span class="c-name">AP Calculus AB</span>
+            </div>
+
+            <!-- 注意这里：路径是 ap-calculus-bc/index.html -->
+            <div class="card" onclick="select(this, 'AP Calculus BC', 'ap-calculus-bc/index.html', 'Grade 11-12', 'Advanced Calculus including parametric equations, polar coordinates, and series.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">ADVANCED</span><span class="c-name">AP Calculus BC</span>
+            </div>
+        </div>>
+
+        <!-- SECTOR 02: A-LEVEL (路径改为 alevel/xxx.html) -->
+        <div class="deck-title"><span>SECTOR 02 // A-LEVEL</span><span>UK SYSTEM</span></div>
+        <div class="grid">
+            <div class="card" onclick="select(this, 'Pure Math P1', 'alevel/p1.html', 'AS Level', 'Algebra, Quadratics, Coordinate Geometry, and introductory Calculus.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">PURE MATH</span><span class="c-name">P1 Module</span>
+            </div>
+            <div class="card" onclick="select(this, 'Pure Math P3', 'alevel/p3.html', 'A2 Level', 'Advanced Trigonometry, Algebra, Integration, and Numerical Methods.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">PURE MATH</span><span class="c-name">P3 Module</span>
+            </div>
+            <div class="card" onclick="select(this, 'Statistics S1', 'alevel/s1.html', 'AS/A2 Level', 'Data analysis, Probability, Correlation, and Normal Distribution.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">APPLIED</span><span class="c-name">Statistics S1</span>
+            </div>
+            <div class="card" onclick="select(this, 'Mechanics M1', 'alevel/m1.html', 'AS/A2 Level', 'Mathematical modeling of Kinematics, Dynamics, and Statics.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">APPLIED</span><span class="c-name">Mechanics M1</span>
+            </div>
+        </div>
+
+        <!-- SECTOR 03: IB (路径改为 ib/xxx.html) -->
+        <div class="deck-title"><span>SECTOR 03 // IB DIPLOMA</span><span>INTERNATIONAL</span></div>
+        <div class="grid">
+            <div class="card" onclick="select(this, 'IB Math AA SL', 'ib/sl.html', 'IB DP1-2', 'Analysis & Approaches SL. Focus on understanding fundamental concepts.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">STANDARD</span><span class="c-name">IB Math AA SL</span>
+            </div>
+            <div class="card" onclick="select(this, 'IB Math AA HL', 'ib/hl.html', 'IB DP1-2', 'Analysis & Approaches HL. Rigorous proof, complex numbers, and advanced calculus.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">HIGHER</span><span class="c-name">IB Math AA HL</span>
+            </div>
+        </div>
+
+        <!-- SECTOR 04: 竞赛 -->
+        <div class="deck-title"><span>SECTOR 04 // COMPETITION</span><span>OLYMPIAD</span></div>
+        <div class="grid">
+            <!-- 注意这里：路径是 competition/index.html -->
+            <div class="card" onclick="select(this, 'AMC 10/12', 'competition/index.html', 'Grade 8-12', 'American Mathematics Competitions. Creative problem solving and logic.')">
+                <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+                <span class="c-id">MAA USA</span><span class="c-name">AMC 10 / 12</span>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="sidebar">
+        <div class="info-container" id="infoPanel">
+            <div class="info-item">
+                <span class="label">SELECTED MODULE</span>
+                <div class="value" id="d-name">NO SELECTION</div>
+            </div>
+            <div class="info-item">
+                <span class="label">INSTRUCTOR</span>
+                <div class="value value-glow">HUANDONG CAO</div>
+            </div>
+            <div class="info-item">
+                <span class="label">TARGET GRADE</span>
+                <div class="value" id="d-grade" style="font-size:16px; color:#00f3ff;">-</div>
+            </div>
+            <div class="info-item" style="border:none; padding-left:0;">
+                <span class="label">BRIEFING</span>
+                <div class="desc-text" id="d-desc">
+                    // AWAITING INPUT. PLEASE SELECT A MODULE FROM THE LEFT DECK TO INITIALIZE DATA STREAM.
+                </div>
+            </div>
+        </div>
+
+        <div class="login-section">
+            <input type="text" class="input-line" placeholder="AGENT ID">
+            <input type="password" class="input-line" placeholder="PASSCODE">
+            
+            <button id="mainBtn" class="arc-btn" onclick="enterLab()">
+                [ ENTER LAB ]
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    let destination = "";
+
+    function select(el, name, url, grade, desc) {
+        // 1. Reset
+        document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+        
+        // 2. Activate
+        el.classList.add('active');
+
+        // 3. Update Sidebar
+        const panel = document.getElementById('infoPanel');
+        panel.classList.add('active');
+        
+        document.getElementById('d-name').innerText = name;
+        document.getElementById('d-grade').innerText = grade;
+        document.getElementById('d-desc').innerText = desc;
+
+        // 4. Update Button State
+        const btn = document.getElementById('mainBtn');
+        btn.classList.add('ready');
+        
+        destination = url; // 存储点击的路径，例如 'ap/calc-ab.html'
+    }
+
+    // *** 修复后的 enterLab 函数，支持动态跳转到子文件夹 ***
+    function enterLab() {
+        if (!destination) {
+            alert("SYSTEM WARNING: No Module Selected.");
+            return;
+        }
+
+        const btn = document.getElementById('mainBtn');
+        
+        // 只有当按钮准备好（已变蓝）时才执行
+        if(btn.classList.contains('ready')) {
+            btn.innerHTML = "ACCESS GRANTED...";
+            btn.style.color = "#00f3ff";
+            btn.style.textShadow = "0 0 10px #00f3ff";
+            
+            setTimeout(() => {
+                // 执行跳转到 destination (即刚才 select 中保存的子文件夹路径)
+                window.location.href = destination;
+            }, 600);
+        }
+    }
+</script>
+</body>
+</html>
