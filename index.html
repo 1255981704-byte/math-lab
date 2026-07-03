@@ -24,33 +24,7 @@
             pointer-events: none;
             transform: scale(1.1); /* 轻微放大消失效果 */
         }
-/* =========================================
-           修复主控大屏的内容溢出，加入内部滚动与科幻滚动条
-           ========================================= */
-        
-        /* 1. 确保整个主面板不会被内容撑大 */
-        .view-body {
-            overflow: hidden; /* 锁死边界，防止变形 */
-        }
 
-        /* 2. 让章节卡片网格成为独立的滚动区域 */
-        .sub-grid {
-            flex: 1;               /* 自动占满除了头部和底部的剩余高度 */
-            overflow-y: auto;      /* 内容过多时自动开启垂直滚动 */
-            min-height: 0;         /* 【极其关键】防止 Flex 子元素撑爆父容器 */
-            padding-right: 15px;   /* 给右侧滚动条留出空间，防止遮挡内容 */
-            margin-bottom: 20px;   /* 和底部按钮组保持呼吸距离 */
-            
-            /* 确保网格布局正常运作，具体数值若 ignite-core 中已有可省略 */
-            display: grid;
-            gap: 15px;
-            align-content: start;  /* 内容向上对齐 */
-        }
-
-        /* 3. 打造机甲风专属发光滚动条 (仅对 sub-grid 生效) */
-        .sub-grid::-webkit-scrollbar {
-            width: 6px; /* 纤细的科技感尺寸 */
-        }
         
         .sub-grid::-webkit-scrollbar-track {
             background: rgba(0, 243, 255, 0.05); /* 极暗的轨道底色 */
@@ -129,6 +103,51 @@
             background-size: 40px 40px;
             pointer-events: none; z-index: -1;
         }
+/* =========================================
+           修复主控大屏的内容溢出，加入内部滚动与科幻滚动条
+           ========================================= */
+        
+        /* 1. 确保整个主面板不会被内容撑大 */
+        .view-body {
+            overflow: hidden; /* 锁死边界，防止变形 */
+        }
+
+        /* 2. 让章节卡片网格成为独立的滚动区域 */
+        .sub-grid {
+            flex: 1;               /* 自动占满除了头部和底部的剩余高度 */
+            overflow-y: auto;      /* 内容过多时自动开启垂直滚动 */
+            min-height: 0;         /* 【极其关键】防止 Flex 子元素撑爆父容器 */
+            padding-right: 15px;   /* 给右侧滚动条留出空间，防止遮挡内容 */
+            margin-bottom: 20px;   /* 和底部按钮组保持呼吸距离 */
+            
+            /* 确保网格布局正常运作，具体数值若 ignite-core 中已有可省略 */
+            display: grid;
+            gap: 15px;
+            align-content: start;  /* 内容向上对齐 */
+        }
+
+        /* 3. 打造机甲风专属发光滚动条 (仅对 sub-grid 生效) */
+        .sub-grid::-webkit-scrollbar {
+            width: 6px; /* 纤细的科技感尺寸 */
+        }
+        
+        .sub-grid::-webkit-scrollbar-track {
+            background: rgba(0, 243, 255, 0.05); /* 极暗的轨道底色 */
+            border-radius: 4px;
+        }
+        
+        .sub-grid::-webkit-scrollbar-thumb {
+            background: rgba(0, 243, 255, 0.3); /* 荧光蓝滑块 */
+            border-radius: 4px;
+            border: 1px solid rgba(0, 243, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .sub-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 243, 255, 0.8); /* 悬停时高亮发光 */
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+        }
+        
     </style>
 </head>
 <body>
