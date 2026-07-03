@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IGNITE: 5.1 RIEMANN SUMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700;800;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="ignite-core.css">
+    
+    <style>
+        /* --- 1. 核心布局修复 (Dashboard Mode) --- */
+        /* 锁死主窗口，禁止浏览器层级滚动，确保 App 质感 */
+        html, body {
+            height: 100%; 
+            width: 100%;
+            overflow: hidden; 
+            margin: 0; padding: 0;
+            display: flex; flex-direction: column;
+        }
+
+        /* 界面容器撑满剩余高度 */
+        .interface { 
+            flex: 1; 
+            display: flex; 
+            overflow: hidden; 
+            position: relative;
+        }
+
+        /* 侧边栏样式 (保持不变) */
+        .nav-panel-container {
+            width: 320px;
+            height: 100%; 
+            overflow-y: auto; 
+            background: rgba(5, 10, 15, 0.95);
+            flex-shrink: 0;
+            border-right: 1px solid var(--border-dim);
+        }
+
+        /* 主视图：变成一个固定的视口 */
+        .main-view {
+            flex: 1; 
+            height: 100%; /* 强制撑满 */
+            display: flex; 
+            flex-direction: column; 
+            position: relative;
+            overflow: hidden; 
+        }
+
+        /* 内容区域：弹性柱子，占满高度 */
+        .view-body { 
+            flex: 1; 
+            height: 100%; /* 关键：撑满高度 */
+            display: flex; 
+            flex-direction: column;
+            padding: 40px; /* 保持你原本调整好的间距 */
+            overflow: hidden; /* 内容溢出时截断，交给内部 iframe 处理 */
+            box-sizing: border-box;
+            position: relative;
+            /* 增加顺滑过渡，当 padding 变化时有动画 */
+            transition: padding 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        /* --- [新增] 炫酷专注模式：机甲折叠效果 --- */
+        .vh-group {
+            /* 默认状态：展开 */
+            max-height: 200px; 
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+            margin-bottom: 20px; /* 保持原有间距 */
+            
+            /* 极致顺滑的机械过渡动画 */
+            transition: 
+                max-height 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                margin 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                opacity 0.4s ease-out,
+                transform 0.4s ease-in,
+                filter 0.4s linear;
+            
+            transform-origin: top left;
+            will-change: transform, opacity, max-height;
+        }
+
+        /* 专注模式激活状态 */
+        .view-body.focus-mode {
+            padding-top: 15px; /* 收起标题后，顶部留出一点呼吸感，不至于贴顶 */
+        }
+
+        .view-body.focus-mode .vh-group {
+            max-height: 0;
+            margin-bottom: 0;
+            padding-bottom: 0;
+            opacity: 0;
+            /* 向上折叠 + 微缩 + 动态模糊 = 科技感消失 */
+            transform: translateY(-30px) scale(0.95);
+            filter: blur(10px);
+            border-bottom: none;
+            pointer-events: none; 
+        }
+
+        /* --- 2. 按钮样式优化 (Ignite Math Lab) --- */
+        .control-deck {
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 30px; border-bottom: 1px solid var(--border-dim); padding-bottom: 20px;
+            flex-shrink: 0; /* 防止被挤压 */
+        }
+        
+        .mode-btn {
+            height: 45px; padding: 0 25px;
+            background: rgba(0, 30, 60, 0.3); border: 1px solid rgba(0, 243, 255, 0.2);
+            color: #678; font-family: 'Rajdhani'; font-weight: 700; font-size: 14px; letter-spacing: 1px;
+            cursor: pointer; transition: all 0.3s ease;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+            display: flex; align-items: center; gap: 10px;
+        }
+        
+        .mode-btn:hover, .mode-btn.active {
+            background: rgba(0, 243, 255, 0.1); border-color: var(--arc-cyan); color: var(--arc-cyan);
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+
+        .mode-btn.lab-btn {
+            margin-left: auto; 
+            border: 1px solid rgba(255, 85, 0, 0.4);
+            color: var(--arc-orange);
+            background: rgba(255, 85, 0, 0.05);
+            padding: 0 30px; 
+            font-weight: 800; letter-spacing: 2px;
+        }
+
+        .mode-btn.lab-btn:hover, .mode-btn.lab-btn.active {
+            background: rgba(255, 85, 0, 0.15); 
+            border-color: #ffaa00;
+            color: #fff; 
+            box-shadow: 0 0 25px rgba(255, 85, 0, 0.3), inset 0 0 10px rgba(255, 85, 0, 0.1); 
+            text-shadow: 0 0 8px rgba(255, 170, 0, 0.8);
+        }
+        
+        .mode-btn.lab-btn svg { transition: transform 0.3s; }
+        .mode-btn.lab-btn:hover svg { transform: scale(1.2); filter: drop-shadow(0 0 5px #ffaa00); }
+
+        /* --- 3. 面板与 Iframe 全屏修复 --- */
+        .stark-panel {
+            display: none;
+            width: 100%; height: 100%; 
+            flex-direction: column;
+            overflow: hidden; /* 防止面板本身滚动 */
+        }
+        .stark-panel.active { display: flex; }
+
+        /* 通用全屏 iframe 样式 */
+        .iframe-container {
+            width: 100%; height: 100%; 
+            border: none; display: block; 
+            background: transparent;
+        }
+
+        /* --- 4. 其他样式 --- */
+        .nb-cn-main { font-family: 'Noto Sans SC', sans-serif; font-size: 12px; color: #567; margin-top: 2px; font-weight: 500; transition: 0.3s; }
+        .nav-unit-btn:hover .nb-cn-main { color: var(--arc-cyan); }
+        .nav-unit-btn.active .nb-cn-main { color: rgba(255,255,255,0.8); }
+        .video-container { width: 100%; height: 100%; background: #000; display: flex; align-items: center; justify-content: center; position: relative; border: 1px solid #111; }
+        .video-placeholder-icon { font-size: 60px; color: #fff; text-shadow: 0 0 30px rgba(0, 243, 255, 0.5); animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div class="fx-layer fx-grid"></div>
+
+    <header>
+        <div class="brand-col">
+            <div class="sys-ver">SYSTEM V33 // ONLINE</div>
+            <div class="sys-title">AP CALCULUS AB</div>
+        </div>
+        <div class="header-right">
+            <div class="status-col">
+                AI CORE: <span>PANG</span><br>
+                SECURITY: <span>ALPHA</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="interface">
+        
+        <div class="nav-panel-container">
+            <div class="return-console">
+                <div class="sys-return-btn" onclick="window.location.href='index.html'">
+                    ◄ RETURN INDEX
+                </div>
+            </div>
+
+            <div class="nav-scroll-area">
+                
+                <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 01</div><div class="nb-title">LIMITS & FOUNDATIONS</div><div class="nb-cn-main">第1章：极限与基础</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item" onclick="loadPage('1-1')"><div class="nsi-en">1.1 Intuition & Estimation</div><div class="nsi-cn">极限的直观理解</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('1-2')"><div class="nsi-en">1.2 Analytic Calculation</div><div class="nsi-cn">极限的解析计算</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('1-3')"><div class="nsi-en">1.3 One-Sided Limits</div><div class="nsi-cn">单侧极限</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('1-4')"><div class="nsi-en">1.4 Infinity & Asymptotes</div><div class="nsi-cn">无穷极限与渐近线</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('1-5')"><div class="nsi-en">1.5 Continuity</div><div class="nsi-cn">连续性</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('1-6')"><div class="nsi-en">1.6 IVT Theorem</div><div class="nsi-cn">介值定理</div></div>
+                    </div>
+                </div>
+
+                <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 02</div><div class="nb-title">THE DERIVATIVE</div><div class="nb-cn-main">第2章：导数</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item" onclick="loadPage('2-1')"><div class="nsi-en">2.1 Definition & Rate</div><div class="nsi-cn">导数的定义</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('2-2')"><div class="nsi-en">2.2 Derivative as Slope</div><div class="nsi-cn">作为斜率的导数</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('2-3')"><div class="nsi-en">2.3 Differentiability</div><div class="nsi-cn">可导性</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('2-4')"><div class="nsi-en">2.4 Basic Rules</div><div class="nsi-cn">基本求导法则</div></div>
+                    </div>
+                </div>
+
+                <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 03</div><div class="nb-title">DIFF TECHNIQUES</div><div class="nb-cn-main">第3章：微分技巧</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item" onclick="loadPage('3-1')"><div class="nsi-en">3.1 Product & Quotient</div><div class="nsi-cn">积法则与商法则</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('3-2')"><div class="nsi-en">3.2 Chain Rule</div><div class="nsi-cn">链式法则</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('3-3')"><div class="nsi-en">3.3 Implicit Diff</div><div class="nsi-cn">隐函数微分</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('3-4')"><div class="nsi-en">3.4 Inverse Functions</div><div class="nsi-cn">反函数求导</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('3-5')"><div class="nsi-en">3.5 Exp & Log</div><div class="nsi-cn">指数与对数函数</div></div>
+                    </div>
+                </div>
+
+                <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 04</div><div class="nb-title">APPLICATIONS OF DIFF</div><div class="nb-cn-main">第4章：导数的应用</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item" onclick="loadPage('4-1')"><div class="nsi-en">4.1 Related Rates</div><div class="nsi-cn">相关变化率</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('4-2')"><div class="nsi-en">4.2 Extreme Values</div><div class="nsi-cn">极值问题</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('4-3')"><div class="nsi-en">4.3 MVT</div><div class="nsi-cn">中值定理</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('4-4')"><div class="nsi-en">4.4 First Derivative Test</div><div class="nsi-cn">一阶导数判别法</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('4-5')"><div class="nsi-en">4.5 Second Derivative Test</div><div class="nsi-cn">二阶导数判别法</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('4-6')"><div class="nsi-en">4.6 Optimization</div><div class="nsi-cn">最优化问题</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('4-7')"><div class="nsi-en">4.7 L'Hopital's Rule</div><div class="nsi-cn">洛必达法则</div></div>
+                    </div>
+                </div>
+
+                <div class="nav-unit-btn active" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 05</div><div class="nb-title">INTEGRATION</div><div class="nb-cn-main">第5章：积分</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu" style="display:block;">
+                        <div class="nav-sub-item current" onclick="event.stopPropagation()">
+                            <div class="nsi-en">5.1 Riemann Sums</div><div class="nsi-cn">定积分与黎曼和</div>
+                        </div>
+                        <div class="nav-sub-item" onclick="loadPage('5-2')"><div class="nsi-en">5.2 FTC Theorem</div><div class="nsi-cn">微积分基本定理</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('5-3')"><div class="nsi-en">5.3 Antiderivatives</div><div class="nsi-cn">不定积分与反导数</div></div>
+                        <div class="nav-sub-item" onclick="loadPage('5-4')"><div class="nsi-en">5.4 Substitution</div><div class="nsi-cn">换元积分法</div></div>
+                    </div>
+                </div>
+
+                <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 06</div><div class="nb-title">INTEGRATION APPS</div><div class="nb-cn-main">第6章：积分的应用</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item locked"><div class="nsi-en">6.1 Area Between Curves <span class="lock-icon">🔒</span></div><div class="nsi-cn">曲线间的面积</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">6.2 Volumes <span class="lock-icon">🔒</span></div><div class="nsi-cn">体积计算</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">6.3 Kinematics <span class="lock-icon">🔒</span></div><div class="nsi-cn">运动学应用</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">6.4 Accumulated Change <span class="lock-icon">🔒</span></div><div class="nsi-cn">累积变化</div></div>
+                    </div>
+                </div>
+
+                <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 07</div><div class="nb-title">DIFFERENTIAL EQS</div><div class="nb-cn-main">第7章：微分方程</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item locked"><div class="nsi-en">7.1 Slope Fields <span class="lock-icon">🔒</span></div><div class="nsi-cn">斜率场</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">7.2 Separable Eqs <span class="lock-icon">🔒</span></div><div class="nsi-cn">可分离变量方程</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">7.3 Logistic Models <span class="lock-icon">🔒</span></div><div class="nsi-cn">逻辑斯蒂模型</div></div>
+                    </div>
+                </div>
+                
+                 <div class="nav-unit-btn" onclick="toggleUnit(this)">
+                    <div class="nb-id">UNIT 08</div><div class="nb-title">FINAL REVIEW</div><div class="nb-cn-main">第8章：总复习</div><div class="arrow-indicator">▶</div>
+                    <div class="nav-sub-menu">
+                        <div class="nav-sub-item locked"><div class="nsi-en">8.1 Key Concepts <span class="lock-icon">🔒</span></div><div class="nsi-cn">核心概念串讲</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">8.2 MCQ Strategies <span class="lock-icon">🔒</span></div><div class="nsi-cn">选择题策略</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">8.3 FRQ Strategies <span class="lock-icon">🔒</span></div><div class="nsi-cn">解答题策略</div></div>
+                        <div class="nav-sub-item locked"><div class="nsi-en">8.4 Mock Exam <span class="lock-icon">🔒</span></div><div class="nsi-cn">全真模拟考</div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-view">
+            <div class="corner tl"></div><div class="corner tr"></div>
+            <div class="corner bl"></div><div class="corner br"></div>
+
+            <div class="view-body">
+                
+                <div class="vh-group">
+                    <div class="title-wrapper">
+                        <div class="vh-main">RIEMANN SUMS</div>
+                        <div class="vh-sub">定积分与黎曼和</div>
+                    </div>
+                    <div class="author-tag">INSTRUCTOR: <b>HUANDONG CAO</b></div>
+                </div>
+
+                <div class="control-deck">
+                    <button class="mode-btn active" onclick="switchView('lecture', this)">
+                        <svg class="mode-icon" viewBox="0 0 24 24"><path d="M21 3H3c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H3V5h18v14zM8 8v8l7-4z"/></svg>
+                        LECTURE
+                    </button>
+                    <button class="mode-btn" onclick="switchView('notes', this)">
+                        <svg class="mode-icon" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                        NOTES
+                    </button>
+                    <button class="mode-btn" onclick="switchView('assign', this)">
+                        <svg class="mode-icon" viewBox="0 0 24 24"><path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                        ASSIGNMENT
+                    </button>
+                    <button class="mode-btn" onclick="switchView('quiz', this)">
+                        <svg class="mode-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                        QUIZ
+                    </button>
+
+                    <button class="mode-btn lab-btn" onclick="switchView('lab', this)">
+                        <svg class="mode-icon" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l-5.5 9h11L12 2zm0 3.8l2.6 4.2h-5.2L12 5.8zM7.5 13l-3 7h15l-3-7h-9zm1.8 2h5.4l1.3 3H8l1.3-3z"/>
+                        </svg>
+                        IGNITE MATH LAB
+                    </button>
+                </div>
+
+                <div style="flex:1; position:relative; width: 100%; height: 100%; overflow: hidden;">
+                    
+                    <div id="view-lecture" class="stark-panel active">
+                        <div class="panel-header">
+                            <div class="ph-title">VIDEO FEED</div>
+                            <div class="ph-meta">1080P // REC</div>
+                        </div>
+                        <div class="panel-body" style="padding:0; flex:1; display:flex;">
+                            <div class="video-container">
+                                <div style="position: absolute; top: 20px; left: 20px; color: #ff3333; font-weight: bold; font-family: 'Share Tech Mono'; animation: blink 2s infinite;">● LIVE</div>
+                                <div class="video-placeholder-icon">▶</div>
+                                <div style="position:absolute; bottom:20px; left:20px; color:#567; font-family:'Share Tech Mono';">IGNITE SECURE STREAM</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="view-notes" class="stark-panel">
+                        <div class="panel-header">
+                            <div class="ph-title">DATA LOGS</div>
+                            <div class="ph-meta">SYNCED // NOTES5-1.HTML</div>
+                        </div>
+                        <div class="panel-body" style="padding: 0; flex:1;">
+                            <iframe src="notes5-1.html" class="iframe-container"></iframe>
+                        </div>
+                    </div>
+
+                    <div id="view-assign" class="stark-panel">
+                        <iframe src="assignment5-1.html" class="iframe-container"></iframe>
+                    </div>
+
+                    <div id="view-lab" class="stark-panel">
+                        <div class="panel-header"><div class="ph-title">LABORATORY</div></div>
+                        <div class="panel-body" style="padding:0; flex:1;">
+                            <iframe src="riemann.html" class="iframe-container"></iframe>
+                        </div>
+                    </div>
+
+                    <div id="view-quiz" class="stark-panel">
+    <iframe src="quiz.html" class="iframe-container"></iframe>
+                     </div>
+
+                </div>
+
+                <div class="view-footer" style="margin-top:auto; padding-top:15px; border-top: 1px solid rgba(255,255,255,0.05); flex-shrink:0;">
+                    <span style="font-family:'Share Tech Mono'; color:#456; font-size:10px;">SYSTEM STABLE // PANG: Ready.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function switchView(viewId, btn) {
+            // 1. 按钮状态切换
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // 2. 面板切换
+            document.querySelectorAll('.stark-panel').forEach(p => p.classList.remove('active'));
+            document.getElementById('view-' + viewId).classList.add('active');
+
+            // 3. 炫酷专注模式逻辑：自动折叠标题
+            const bodyEl = document.querySelector('.view-body');
+            
+            // 如果是作业、测验或实验，开启专注模式
+            if (viewId === 'assign' || viewId === 'quiz' || viewId === 'lab'|| viewId === 'notes') {
+                bodyEl.classList.add('focus-mode');
+            } else {
+                // 如果是视频或笔记，恢复展开
+                bodyEl.classList.remove('focus-mode');
+            }
+        }
+
+        function toggleUnit(btn) {
+            const isActive = btn.classList.contains('active');
+            document.querySelectorAll('.nav-unit-btn').forEach(b => {
+                b.classList.remove('active');
+                const menu = b.querySelector('.nav-sub-menu');
+                if(menu) menu.style.display = 'none';
+            });
+            if (!isActive) {
+                btn.classList.add('active');
+                const menu = btn.querySelector('.nav-sub-menu');
+                if(menu) menu.style.display = 'block';
+            }
+        }
+
+        function loadPage(pageId) {
+            event.stopPropagation();
+            if(pageId === '5-1') return;
+            console.log("Loading: " + pageId);
+        }
+    </script>
+</body>
+</html>

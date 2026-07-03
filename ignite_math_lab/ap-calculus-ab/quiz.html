@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ignite Quiz: Riemann Sums</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Rajdhani:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css">
+    
+    <style>
+        /* =========================================
+           1. 基础配置
+           ========================================= */
+        :root {
+            --arc-cyan: #00f3ff;
+            --arc-blue: #0077ff;
+        }
+        html { height: 100%; overflow: hidden; }
+        body {
+            height: 100%; margin: 0; padding: 0;
+            background: #080a0c; /* 兜底背景色 */
+            color: #c0c5d0;
+            font-family: 'Inter', sans-serif;
+            display: flex; flex-direction: column;
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: #345; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--arc-cyan); }
+
+        /* =========================================
+           2. 顶部 HUD
+           ========================================= */
+        .quiz-header {
+            height: 60px; flex-shrink: 0;
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0 25px;
+            background: rgba(8, 10, 12, 0.98);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 10;
+        }
+
+        .hud-left { display: flex; align-items: center; gap: 15px; }
+        .hud-logo { font-family: 'Rajdhani'; font-weight: 700; font-size: 18px; letter-spacing: 2px; color: #fff; }
+        .hud-tag { 
+            background: rgba(255, 255, 255, 0.05); color: #89a; 
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 2px 8px; font-size: 11px; border-radius: 2px; font-family: 'Rajdhani'; font-weight: 700;
+        }
+
+        .hud-timer {
+            font-family: 'Rajdhani'; font-weight: 700; font-size: 24px; color: #fff;
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(0,0,0,0.2); padding: 4px 12px; border-radius: 4px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .timer-dot { width: 6px; height: 6px; background: #00ff88; border-radius: 50%; box-shadow: 0 0 5px #00ff88; animation: pulse 2s infinite; }
+        .timer-warning .timer-dot { background: #ff3333; box-shadow: 0 0 5px #ff3333; animation: pulseFast 0.5s infinite; }
+
+        /* =========================================
+           3. 主界面布局
+           ========================================= */
+        .quiz-layout {
+            flex: 1; display: grid; 
+            grid-template-columns: 1fr 260px;
+            overflow: hidden;
+        }
+
+        /* --- 左侧：答题区 --- */
+        .q-viewport {
+            padding: 30px;
+            overflow-y: auto;
+            display: flex; flex-direction: column;
+            align-items: stretch; 
+            background: radial-gradient(circle at 50% 30%, rgba(20, 25, 30, 0.4) 0%, transparent 70%);
+        }
+
+        .q-card {
+            width: 100%; box-sizing: border-box;
+            background: rgba(12, 16, 20, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: 3px solid rgba(0, 243, 255, 0.3); 
+            padding: 40px 50px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .q-card::after {
+            content: 'SEC-5.1 // R-SUM';
+            position: absolute; top: 10px; right: 15px;
+            font-family: 'Rajdhani'; font-size: 10px; color: #345; letter-spacing: 1px;
+        }
+
+        .q-meta {
+            display: flex; justify-content: space-between; margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 15px;
+        }
+        .q-number { font-family: 'Rajdhani'; font-size: 20px; font-weight: 700; color: var(--arc-cyan); letter-spacing: 1px; }
+        .q-diff { font-family: 'Inter'; font-size: 12px; color: #567; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+        .q-content {
+            font-size: 17px; line-height: 1.7; color: #eef; margin-bottom: 35px; font-weight: 400;
+        }
+
+        /* 选项样式 */
+        .options-list { display: grid; gap: 12px; }
+        
+        .option-item {
+            display: flex; align-items: center; gap: 20px;
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 2px;
+            cursor: pointer; transition: all 0.2s;
+            font-size: 16px; 
+        }
+        
+        .option-item:hover {
+            background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .option-item.selected {
+            background: rgba(0, 243, 255, 0.08);
+            border-color: rgba(0, 243, 255, 0.4);
+            box-shadow: inset 2px 0 0 var(--arc-cyan);
+        }
+        
+        .opt-idx {
+            width: 24px; height: 24px; 
+            border: 1px solid #456; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Rajdhani'; font-weight: 700; font-size: 12px; color: #678;
+            transition: 0.2s; flex-shrink: 0;
+        }
+        .option-item.selected .opt-idx {
+            background: var(--arc-cyan); color: #000; border-color: var(--arc-cyan);
+        }
+
+        /* --- 右侧：导航矩阵 --- */
+        .q-nav-panel {
+            background: rgba(6, 8, 10, 0.95);
+            border-left: 1px solid rgba(255,255,255,0.05);
+            padding: 20px;
+            display: flex; flex-direction: column;
+        }
+
+        .nav-header { 
+            font-family: 'Rajdhani'; font-weight: 700; color: #456; 
+            margin-bottom: 20px; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;
+        }
+
+        .matrix-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            margin-bottom: auto;
+        }
+
+        .matrix-cell {
+            aspect-ratio: 1;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid transparent;
+            border-radius: 2px;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Rajdhani'; font-weight: 600; font-size: 13px; color: #567;
+            cursor: pointer; transition: 0.2s;
+        }
+        .matrix-cell:hover { background: rgba(255,255,255,0.08); color: #fff; }
+        
+        .matrix-cell.current { border-color: var(--arc-cyan); color: var(--arc-cyan); box-shadow: 0 0 10px rgba(0,243,255,0.1); }
+        .matrix-cell.answered { background: rgba(0, 119, 255, 0.2); color: #a0cfff; }
+        
+        .nav-controls {
+            display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;
+        }
+        .btn-row { display: flex; justify-content: space-between; gap: 10px; }
+
+        .ctrl-btn {
+            flex: 1; padding: 12px 0;
+            background: transparent; border: 1px solid rgba(255,255,255,0.1);
+            color: #89a; font-family: 'Rajdhani'; font-weight: 700; font-size: 13px;
+            cursor: pointer; transition: 0.2s; text-transform: uppercase; letter-spacing: 1px;
+        }
+        .ctrl-btn:hover { border-color: #fff; color: #fff; background: rgba(255,255,255,0.02); }
+        .ctrl-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .submit-btn {
+            width: 100%; background: rgba(0, 119, 255, 0.1); 
+            border: 1px solid rgba(0, 119, 255, 0.3); color: var(--arc-blue);
+        }
+        .submit-btn:hover { 
+            background: var(--arc-blue); color: #fff; 
+            box-shadow: 0 0 20px rgba(0, 119, 255, 0.3); 
+        }
+
+        /* --- 5. 结果弹窗 --- */
+        .result-overlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.95); z-index: 100;
+            display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(10px);
+        }
+        .score-card {
+            width: 500px; padding: 50px; text-align: center;
+            background: rgba(10, 15, 20, 1); border: 1px solid #333;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            transition: all 0.5s ease;
+        }
+        
+        /* 动态光边 (Default) */
+        .score-card::before { 
+            content:''; position:absolute; top:0; left:0; width:100%; height:2px; 
+            background: #333; box-shadow: 0 0 15px currentColor; transition: 0.5s;
+        }
+        
+        .score-stats { display: flex; justify-content: space-around; margin: 30px 0; border-top: 1px solid #222; border-bottom: 1px solid #222; padding: 20px 0; }
+        .stat-box h3 { font-family: 'Rajdhani'; font-size: 36px; margin: 0; color: #fff; font-weight: 700; }
+        .stat-box p { font-family: 'Share Tech Mono'; font-size: 10px; margin: 5px 0 0; color: #567; letter-spacing: 1px; text-transform: uppercase; }
+
+        .grade-title { font-family: 'Rajdhani'; font-weight: 800; font-size: 24px; letter-spacing: 4px; margin-bottom: 10px; color: #fff; }
+        .grade-sub { font-family: 'Inter'; font-size: 14px; color: #678; margin-bottom: 0; }
+
+        /* 状态色 - 修复后的CSS规则 */
+        .status-elite { color: #00ff88 !important; border-color: #00ff88 !important; }
+        .status-elite::before { background: #00ff88 !important; box-shadow: 0 0 20px #00ff88 !important; }
+
+        .status-pass { color: var(--arc-cyan) !important; border-color: var(--arc-cyan) !important; }
+        .status-pass::before { background: var(--arc-cyan) !important; box-shadow: 0 0 20px var(--arc-cyan) !important; }
+
+        .status-fail { color: #ff3333 !important; border-color: #ff3333 !important; }
+        .status-fail::before { background: #ff3333 !important; box-shadow: 0 0 20px #ff3333 !important; }
+
+        @keyframes pulse { 0% { opacity:0.6; } 50% { opacity:1; } 100% { opacity:0.6; } }
+        @keyframes pulseFast { 0% { opacity:0.3; } 50% { opacity:1; } 100% { opacity:0.3; } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .katex { font-size: 1.1em; color: #e0e6ed; }
+    </style>
+</head>
+<body>
+
+    <div class="quiz-header">
+        <div class="hud-left">
+            <div class="hud-logo">IGNITE // QUIZ</div>
+            <div class="hud-tag">SEC 5.1</div>
+        </div>
+        <div class="hud-timer" id="timer-box">
+            <div class="timer-dot"></div>
+            <span id="timer-display">30:00</span>
+        </div>
+    </div>
+
+    <div class="quiz-layout">
+        
+        <div class="q-viewport">
+            <div id="start-view" style="text-align:center; margin-top:100px;">
+                <h1 style="font-family:'Rajdhani'; font-size:48px; letter-spacing:2px; color:#fff; margin-bottom:10px;">RIEMANN SUMS</h1>
+                <div style="width:50px; height:2px; background:var(--arc-cyan); margin:0 auto 20px;"></div>
+                <p style="color:#89a; margin:0 auto 40px; max-width:400px; line-height:1.6;">
+                    <strong>20 Questions</strong> • <strong>30 Minutes</strong><br>
+                    Standard AP Calculus AB Difficulty.<br>
+                    Please ensure a stable environment before initializing.
+                </p>
+                <button class="ctrl-btn submit-btn" onclick="startQuiz()" style="width:200px; font-size:16px;">INITIALIZE EXAM</button>
+            </div>
+
+            <div id="q-card" class="q-card" style="display:none;">
+                <div class="q-meta">
+                    <span class="q-number" id="q-num-display">QUESTION 01</span>
+                    <span class="q-diff">AP STANDARD // MULTIPLE CHOICE</span>
+                </div>
+                <div class="q-content" id="q-text">
+                    </div>
+                <div class="options-list" id="q-options">
+                    </div>
+            </div>
+        </div>
+
+        <div class="q-nav-panel">
+            <div class="nav-header">QUESTION MATRIX</div>
+            <div class="matrix-grid" id="matrix-grid">
+                </div>
+            
+            <div class="nav-controls">
+                <div class="btn-row">
+                    <button class="ctrl-btn" id="btn-prev" onclick="prevQ()">PREV</button>
+                    <button class="ctrl-btn" id="btn-next" onclick="nextQ()">NEXT</button>
+                </div>
+                <button class="ctrl-btn submit-btn" onclick="submitQuiz()">SUBMIT ATTEMPT</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="result-overlay" id="result-view">
+        <div class="score-card" id="score-card-el">
+            <div class="grade-title" id="grade-title">CALCULATING...</div>
+            <p class="grade-sub" id="grade-sub">PERFORMANCE ANALYSIS</p>
+            
+            <div class="score-stats">
+                <div class="stat-box">
+                    <h3 id="score-raw">0/20</h3>
+                    <p>Correct</p>
+                </div>
+                <div class="stat-box">
+                    <h3 id="score-pct">0%</h3>
+                    <p>Accuracy</p>
+                </div>
+            </div>
+            
+            <button class="ctrl-btn" onclick="location.reload()" style="width:100%;">RETAKE MODULE</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/contrib/auto-render.min.js"></script>
+    <script>
+        /* --- 严谨的数学题库 (Rigorous Math) --- */
+        const quizData = [
+            {
+                q: "The function $f(x)$ is continuous on $[0, 10]$. Selected values of $f(x)$ are given in the table below. Approximate the value of $\\int_{0}^{10} f(x) \\, dx$ using a **Left Riemann Sum** with 5 subintervals of equal length.",
+                table: {x: [0, 2, 4, 6, 8, 10], f: [5, 8, 12, 9, 6, 4]},
+                options: ["76", "80", "84", "88"], correct: 1
+            },
+            {
+                q: "Using the same table as above, approximate $\\int_{0}^{10} f(x) \\, dx$ using a **Right Riemann Sum** with 5 subintervals of equal length.",
+                table: {x: [0, 2, 4, 6, 8, 10], f: [5, 8, 12, 9, 6, 4]},
+                options: ["76", "78", "80", "82"], correct: 1
+            },
+            {
+                q: "Let $f(x) = x^2 + 1$. Approximate the area under the curve $y=f(x)$ from $x=0$ to $x=4$ using a **Midpoint Riemann Sum** with $n=2$ subintervals of equal length.",
+                options: ["20", "22", "24", "26"], correct: 2
+            },
+            {
+                q: "If $f$ is a strictly **increasing** and continuous function on the closed interval $[a, b]$, which of the following must be true regarding the Left Riemann Sum approximation, $L_n$, of $\\int_{a}^{b} f(x) \\, dx$?",
+                options: ["$L_n$ is an overestimate", "$L_n$ is an underestimate", "$L_n$ is exact", "The relationship cannot be determined"], correct: 1
+            },
+            {
+                q: "Which of the following definite integrals is equivalent to the limit $\\lim_{n \\to \\infty} \\sum_{i=1}^{n} \\left( 2 + \\frac{3i}{n} \\right)^2 \\cdot \\frac{3}{n}$?",
+                options: ["$\\int_{0}^{3} (2+x)^2 \\, dx$", "$\\int_{2}^{5} x^2 \\, dx$", "$\\int_{0}^{1} (2+3x)^2 \\cdot 3 \\, dx$", "All of the above"], correct: 3
+            },
+            {
+                q: "The velocity of a particle moving along the x-axis is given by $v(t) = t^2$ for $t \\ge 0$. Estimate the total distance traveled by the particle from $t=0$ to $t=3$ using a **Right Riemann Sum** with $n=3$ equal subintervals.",
+                options: ["9", "13", "14", "15"], correct: 2
+            },
+            {
+                q: "Using the table below, approximate $\\int_{0}^{12} g(t) \\, dt$ using a **Midpoint Riemann Sum** with 3 subintervals of equal length.",
+                table: {x: [0, 2, 4, 6, 8, 10, 12], f: [1, 3, 5, 7, 8, 10, 11]},
+                options: ["80", "84", "88", "92"], correct: 1
+            },
+            {
+                q: "Which definite integral represents $\\lim_{n \\to \\infty} \\sum_{k=1}^{n} \\sqrt{1 + \\frac{2k}{n}} \\cdot \\frac{2}{n}$?",
+                options: ["$\\int_{0}^{2} \\sqrt{1+x} \\, dx$", "$\\int_{1}^{3} \\sqrt{x} \\, dx$", "$\\int_{0}^{1} 2\\sqrt{1+2x} \\, dx$", "Both A and B"], correct: 3
+            },
+            {
+                q: "Water is pumped into a tank at a rate of $R(t)$ gallons per minute, where $t$ is in minutes. What does the integral $\\int_{0}^{10} R(t) \\, dt$ represent?",
+                options: ["The average rate of flow over the first 10 minutes", "The total amount of water pumped into the tank during the first 10 minutes", "The rate of change of the volume of water", "The volume of water in the tank at t=10"], correct: 1
+            },
+            {
+                q: "Let $f(x) = e^x$. Consider the approximations for $\\int_{0}^{2} f(x) \\, dx$ using Left ($L_n$), Right ($R_n$), and Trapezoidal ($T_n$) sums. Which inequality is correct?",
+                options: ["$L_n < T_n < \\int_{0}^{2} f(x) dx < R_n$", "$L_n < \\int_{0}^{2} f(x) dx < T_n < R_n$", "$R_n < T_n < L_n$", "$T_n < L_n < R_n$"], correct: 1 
+            },
+            {
+                q: "Calculate the **Left Riemann Sum** for $f(x) = \\frac{1}{x}$ on the interval $[1, 5]$ with $n=4$ equal subintervals.",
+                options: ["$1 + \\frac{1}{2} + \\frac{1}{3} + \\frac{1}{4}$", "$\\frac{1}{2} + \\frac{1}{3} + \\frac{1}{4} + \\frac{1}{5}$", "$1 + \\frac{1}{2} + \\frac{1}{3} + \\frac{1}{4} + \\frac{1}{5}$", "$\\frac{25}{12}$"], correct: 0
+            },
+            {
+                q: "The function $f$ is continuous on $[0,10]$. Values are: $(0,2), (2,4), (4,6), (6,8), (8,10)$. Estimate $\\int_{0}^{8} f(x)dx$ using the **Trapezoidal Rule** with $n=4$.",
+                options: ["44", "46", "48", "50"], correct: 2
+            },
+            {
+                q: "Which condition guarantees that a **Right Riemann Sum** is an **underestimate** of the definite integral?",
+                options: ["$f(x)$ is strictly decreasing", "$f(x)$ is strictly increasing", "$f(x)$ is concave down", "$f(x)$ is concave up"], correct: 0
+            },
+            {
+                q: "Suppose $\\int_{0}^{5} f(x) \\, dx = 10$. If the Left Sum approximation $L_n = 9.8$ and the Right Sum approximation $R_n = 10.2$, what is the Trapezoidal Sum approximation $T_n$?",
+                options: ["9.9", "10.0", "10.1", "Cannot be determined"], correct: 1
+            },
+            {
+                q: "Consider the integral $\\int_{0}^{\\pi} \\sin(x) \\, dx$. The Left Riemann Sum with $n=4$, $L_4$, will be:",
+                options: ["Zero", "Strictly Positive", "Strictly Negative", "Undefined"], correct: 1
+            },
+            {
+                q: "If the interval $[0, 2]$ is divided into $n$ subintervals of equal width, what is the width $\\Delta x$?",
+                options: ["$2/n$", "$n/2$", "$2k/n$", "$1/n$"], correct: 0
+            },
+            {
+                q: "Evaluate the limit: $\\lim_{n \\to \\infty} \\sum_{k=1}^{n} \\left(\\frac{2k}{n}\\right)^3 \\cdot \\frac{2}{n}$.",
+                options: ["4", "8", "12", "16"], correct: 0
+            },
+            {
+                q: "The velocity $v(t)$ of a car is given by the table: $(0, 30), (2, 40), (3, 50), (5, 60)$. Estimate distance traveled on $[0, 5]$ using a **Left Riemann Sum** with the 3 subintervals indicated by the table.",
+                options: ["190", "200", "210", "220"], correct: 1
+            },
+            {
+                q: "For $f(x)=x^2$ on $[0,2]$, is the Right Riemann Sum an overestimate or underestimate?",
+                options: ["Overestimate", "Underestimate", "Exact", "Neither"], correct: 0
+            },
+            {
+                q: "If $f(x)$ is continuous and concave up on $[a,b]$, then the Trapezoidal approximation is an:",
+                options: ["Overestimate", "Underestimate", "Exact value", "None of these"], correct: 0
+            }
+        ];
+
+        // --- 系统状态 ---
+        let currentIdx = 0;
+        let userAnswers = new Array(quizData.length).fill(null);
+        let timeLeft = 30 * 60; 
+        let timerId = null;
+
+        function initMatrix() {
+            const grid = document.getElementById('matrix-grid');
+            grid.innerHTML = '';
+            quizData.forEach((_, i) => {
+                const cell = document.createElement('div');
+                cell.className = 'matrix-cell';
+                cell.innerText = i + 1;
+                cell.onclick = () => jumpTo(i);
+                cell.id = `cell-${i}`;
+                grid.appendChild(cell);
+            });
+        }
+
+        function startQuiz() {
+            document.getElementById('start-view').style.display = 'none';
+            document.getElementById('q-card').style.display = 'block';
+            initMatrix();
+            updateQuestion();
+            timerId = setInterval(tick, 1000);
+        }
+
+        function tick() {
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            document.getElementById('timer-display').innerText = `${m}:${s}`;
+            if (timeLeft < 300) document.getElementById('timer-box').classList.add('timer-warning');
+            if (timeLeft <= 0) { clearInterval(timerId); submitQuiz(); }
+        }
+
+        function updateQuestion() {
+            const data = quizData[currentIdx];
+            document.getElementById('q-num-display').innerText = `QUESTION ${String(currentIdx + 1).padStart(2, '0')}`;
+            
+            // 渲染内容
+            let html = `<p>${data.q}</p>`;
+            if (data.table) {
+                let h = data.table.x.map(x => `<td>${x}</td>`).join('');
+                let r = data.table.f.map(f => `<td>${f}</td>`).join('');
+                html += `<div style="overflow-x:auto; margin:20px 0; border:1px solid rgba(255,255,255,0.1); background:rgba(255,255,255,0.02); border-radius:4px;"><table style="width:100%; text-align:center; font-family:'Share Tech Mono'; color:#ccc; border-collapse:collapse;"><tr style="border-bottom:1px solid rgba(255,255,255,0.1); color:var(--arc-cyan);"><td style="padding:10px;">x/t</td>${h}</tr><tr><td style="padding:10px;">f(x)/v(t)</td>${r}</tr></table></div>`;
+            }
+            document.getElementById('q-text').innerHTML = html;
+
+            // 渲染选项
+            const optsContainer = document.getElementById('q-options');
+            optsContainer.innerHTML = '';
+            const letters = ['A', 'B', 'C', 'D'];
+            data.options.forEach((opt, i) => {
+                const div = document.createElement('div');
+                div.className = `option-item ${userAnswers[currentIdx] === i ? 'selected' : ''}`;
+                div.onclick = () => selectOption(i);
+                div.innerHTML = `<div class="opt-idx">${letters[i]}</div><div>${opt}</div>`;
+                optsContainer.appendChild(div);
+            });
+
+            // 更新右侧导航状态
+            document.querySelectorAll('.matrix-cell').forEach(c => c.classList.remove('current'));
+            document.getElementById(`cell-${currentIdx}`).classList.add('current');
+
+            // 按钮状态更新：注意这里 Next 按钮文字的变化逻辑
+            document.getElementById('btn-prev').disabled = currentIdx === 0;
+            document.getElementById('btn-next').innerText = currentIdx === quizData.length - 1 ? 'FINISH' : 'NEXT';
+
+            renderMathInElement(document.body, {delimiters: [{left: "$", right: "$", display: false}]});
+        }
+
+        function selectOption(idx) {
+            userAnswers[currentIdx] = idx;
+            document.getElementById(`cell-${currentIdx}`).classList.add('answered');
+            updateQuestion();
+        }
+
+        function jumpTo(idx) { currentIdx = idx; updateQuestion(); }
+        function prevQ() { if(currentIdx > 0) { currentIdx--; updateQuestion(); } }
+        
+        // --- 修复点 1：Next 按钮逻辑 ---
+        function nextQ() { 
+            if(currentIdx < quizData.length - 1) { 
+                currentIdx++; 
+                updateQuestion(); 
+            } else {
+                // 如果是最后一题，点击则提交
+                submitQuiz();
+            }
+        }
+
+        // --- 修复点 2：提交逻辑 ---
+        function submitQuiz() {
+            clearInterval(timerId);
+            let score = 0;
+            userAnswers.forEach((ans, i) => { if (ans === quizData[i].correct) score++; });
+            
+            document.getElementById('result-view').style.display = 'flex';
+            
+            let display = 0;
+            const total = quizData.length;
+            
+            // 简单的动画循环
+            const interval = setInterval(() => {
+                if (display > score) display = score; // 防止动画溢出
+
+                const pct = Math.round((display / total) * 100);
+                document.getElementById('score-raw').innerText = `${display}/${total}`;
+                document.getElementById('score-pct').innerText = `${pct}%`;
+                
+                // 当动画数字达到实际得分时
+                if(display >= score) {
+                    clearInterval(interval);
+                    
+                    // 评分分级
+                    const title = document.getElementById('grade-title');
+                    const card = document.getElementById('score-card-el');
+                    
+                    // 清除旧状态
+                    card.classList.remove('status-elite', 'status-pass', 'status-fail');
+                    
+                    if (pct >= 90) { 
+                        title.innerText = "ELITE OPERATOR"; 
+                        card.classList.add('status-elite'); 
+                    } else if (pct >= 70) {
+                        title.innerText = "MISSION ACCOMPLISHED";
+                        card.classList.add('status-pass');
+                    } else {
+                        title.innerText = "CRITICAL FAILURE";
+                        card.classList.add('status-fail');
+                    }
+                }
+                display++;
+            }, 50);
+        }
+    </script>
+</body>
+</html>
